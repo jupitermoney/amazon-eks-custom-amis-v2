@@ -24,9 +24,10 @@ data "amazon-ami" "this" {
 source "amazon-ebs" "this" {
   ami_block_device_mappings {
     delete_on_termination = true
-    device_name           = "/dev/sdb"
-    volume_size           = var.data_volume_size
-    volume_type           = "gp2"
+    device_name           = "/dev/xvda"
+    # volume_size           = var.data_volume_size
+    volume_size           = var.root_volume_size
+    volume_type           = "gp3"
   }
 
   ami_description         = "EKS Kubernetes Worker AMI with AmazonLinux2 image"
@@ -34,18 +35,18 @@ source "amazon-ebs" "this" {
   ami_virtualization_type = "hvm"
   instance_type           = var.instance_type
 
-  launch_block_device_mappings {
-    delete_on_termination = true
-    device_name           = "/dev/sda1"
-    volume_size           = var.root_volume_size
-    volume_type           = "gp2"
-  }
+  # launch_block_device_mappings {
+  #   delete_on_termination = true
+  #   device_name           = "/dev/sda1"
+  #   volume_size           = var.root_volume_size
+  #   volume_type           = "gp3"
+  # }
 
   launch_block_device_mappings {
     delete_on_termination = true
     device_name           = "/dev/sdb"
     volume_size           = var.data_volume_size
-    volume_type           = "gp2"
+    volume_type           = "gp3"
   }
 
   region = var.aws_region
@@ -98,7 +99,7 @@ build {
 
     scripts = [
       "scripts/cis-benchmark.sh",
-      "scripts/cis-docker.sh",
+      # "scripts/cis-docker.sh",
       "scripts/cis-eks.sh",
       "scripts/cleanup.sh",
     ]

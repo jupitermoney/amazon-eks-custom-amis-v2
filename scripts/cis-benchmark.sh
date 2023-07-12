@@ -203,38 +203,38 @@ rm -f /etc/cron.d/update-motd
 cat > /etc/update-motd.d/30-banner <<"OUTEREOF"
 #!/bin/sh
 cat <<"EOF"
-You are accessing a U.S. Government (USG) Information System (IS) that is provided for USG-authorized use only.
+You are accessing a Jupiter Money Information System (IS) that is provided for Jupiter Money authorized use only.
 
 By using this IS (which includes any device attached to this IS), you consent to the following conditions:
--The USG routinely intercepts and monitors communications on this IS for purposes including, but not limited to, penetration testing, COMSEC monitoring, network operations and defense, personnel misconduct (PM), law enforcement (LE), and counterintelligence (CI) investigations.
--At any time, the USG may inspect and seize data stored on this IS.
--Communications using, or data stored on, this IS are not private, are subject to routine monitoring, interception, and search, and may be disclosed or used for any USG-authorized purpose.
--This IS includes security measures (e.g., authentication and access controls) to protect USG interests--not for your personal benefit or privacy.
+-The Jupiter Money routinely intercepts and monitors communications on this IS for purposes including, but not limited to, penetration testing, COMSEC monitoring, network operations and defense, personnel misconduct (PM), law enforcement (LE), and counterintelligence (CI) investigations.
+-At any time, the Jupiter Money may inspect and seize data stored on this IS.
+-Communications using, or data stored on, this IS are not private, are subject to routine monitoring, interception, and search, and may be disclosed or used for any Jupiter Money-authorized purpose.
+-This IS includes security measures (e.g., authentication and access controls) to protect Jupiter Money interests--not for your personal benefit or privacy.
 -Notwithstanding the above, using this IS does not constitute consent to PM, LE or CI investigative searching or monitoring of the content of privileged communications, or work product, related to personal representation or services by attorneys, psychotherapists, or clergy, and their assistants. Such communications and work product are private and confidential. See User Agreement for details.
 EOF
 OUTEREOF
 
 echo "1.7.1.2 - ensure local login warning banner is configured properly"
 cat > /etc/issue <<EOF
-You are accessing a U.S. Government (USG) Information System (IS) that is provided for USG-authorized use only.
+You are accessing a Jupiter Money Information System (IS) that is provided for jupiter-money-authorized use only.
 
 By using this IS (which includes any device attached to this IS), you consent to the following conditions:
--The USG routinely intercepts and monitors communications on this IS for purposes including, but not limited to, penetration testing, COMSEC monitoring, network operations and defense, personnel misconduct (PM), law enforcement (LE), and counterintelligence (CI) investigations.
--At any time, the USG may inspect and seize data stored on this IS.
--Communications using, or data stored on, this IS are not private, are subject to routine monitoring, interception, and search, and may be disclosed or used for any USG-authorized purpose.
--This IS includes security measures (e.g., authentication and access controls) to protect USG interests--not for your personal benefit or privacy.
+-The Jupiter Money routinely intercepts and monitors communications on this IS for purposes including, but not limited to, penetration testing, COMSEC monitoring, network operations and defense, personnel misconduct (PM), law enforcement (LE), and counterintelligence (CI) investigations.
+-At any time, the Jupiter Money may inspect and seize data stored on this IS.
+-Communications using, or data stored on, this IS are not private, are subject to routine monitoring, interception, and search, and may be disclosed or used for any Jupiter Money-authorized purpose.
+-This IS includes security measures (e.g., authentication and access controls) to protect Jupiter Money interests--not for your personal benefit or privacy.
 -Notwithstanding the above, using this IS does not constitute consent to PM, LE or CI investigative searching or monitoring of the content of privileged communications, or work product, related to personal representation or services by attorneys, psychotherapists, or clergy, and their assistants. Such communications and work product are private and confidential. See User Agreement for details.
 EOF
 
 echo "1.7.1.3 - ensure remote login warning banner is configured properly"
 cat > /etc/issue.net <<EOF
-You are accessing a U.S. Government (USG) Information System (IS) that is provided for USG-authorized use only.
+You are accessing a Jupiter Money Information System (IS) that is provided for jupiter-money-authorized use only.
 
 By using this IS (which includes any device attached to this IS), you consent to the following conditions:
--The USG routinely intercepts and monitors communications on this IS for purposes including, but not limited to, penetration testing, COMSEC monitoring, network operations and defense, personnel misconduct (PM), law enforcement (LE), and counterintelligence (CI) investigations.
--At any time, the USG may inspect and seize data stored on this IS.
--Communications using, or data stored on, this IS are not private, are subject to routine monitoring, interception, and search, and may be disclosed or used for any USG-authorized purpose.
--This IS includes security measures (e.g., authentication and access controls) to protect USG interests--not for your personal benefit or privacy.
+-The Jupiter Money routinely intercepts and monitors communications on this IS for purposes including, but not limited to, penetration testing, COMSEC monitoring, network operations and defense, personnel misconduct (PM), law enforcement (LE), and counterintelligence (CI) investigations.
+-At any time, the Jupiter Money may inspect and seize data stored on this IS.
+-Communications using, or data stored on, this IS are not private, are subject to routine monitoring, interception, and search, and may be disclosed or used for any Jupiter Money-authorized purpose.
+-This IS includes security measures (e.g., authentication and access controls) to protect Jupiter Money interests--not for your personal benefit or privacy.
 -Notwithstanding the above, using this IS does not constitute consent to PM, LE or CI investigative searching or monitoring of the content of privileged communications, or work product, related to personal representation or services by attorneys, psychotherapists, or clergy, and their assistants. Such communications and work product are private and confidential. See User Agreement for details.
 EOF
 
