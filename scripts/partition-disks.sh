@@ -56,11 +56,11 @@ disk_name='/dev/nvme1n1'
 # partition the disk
 parted -a optimal -s $disk_name \
     mklabel gpt \
-    mkpart var ext4 0% 20% \
-    mkpart varlog ext4 20% 40% \
-    mkpart varlogaudit ext4 40% 60% \
-    mkpart home ext4 60% 70% \
-    mkpart varlibdocker ext4 70% 90%
+    mkpart var ext4 0% 10% \
+    mkpart varlog ext4 10% 20% \
+    mkpart varlogaudit ext4 20% 30% \
+    mkpart home ext4 30% 40% \
+    mkpart varlibdocker ext4 40% 90%
 
 # wait for the disks to settle
 sleep 5
