@@ -55,27 +55,15 @@ cat > /etc/docker/daemon.json <<EOF
     "max-size": "10m",
     "max-file": "5"
   },
-  "icc": false,
-  "iptables": true,
-  "storage-driver": "overlay2",
-  "default-ulimits": {
-    "nofile": {
-      "Name": "nofile",
-      "Hard": 200,
-      "Soft": 100
-    },
-    "nproc": {
-      "Name": "nproc",
-      "Hard": 2048,
-      "Soft": 1024
-    }
-  },
   "live-restore": true,
-  "userland-proxy": false,
   "max-concurrent-downloads": 10,
-  "experimental": false,
-  "insecure-registries": [],
-  "no-new-privileges": true
+  "default-ulimits": {
+    "memlock": {
+      "Hard": -1,
+      "Name": "memlock",
+      "Soft": -1
+    }
+  }
 }
 EOF
 

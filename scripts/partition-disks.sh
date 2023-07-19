@@ -58,9 +58,9 @@ parted -a optimal -s $disk_name \
     mklabel gpt \
     mkpart var ext4 0% 10% \
     mkpart varlog ext4 10% 20% \
-    mkpart varlogaudit ext4 20% 30% \
-    mkpart home ext4 30% 40% \
-    mkpart varlibdocker ext4 40% 90%
+    mkpart varlogaudit ext4 20% 45% \
+    mkpart home ext4 45% 50% \
+    mkpart varlibdocker ext4 50% 90%
 
 # wait for the disks to settle
 sleep 5
