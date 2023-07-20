@@ -64,6 +64,7 @@ source "amazon-ebs" "this" {
     os_version        = "Amazon Linux 2"
     source_image_name = "{{ .SourceAMIName }}"
     ami_type          = "al2"
+    creation_time     = local.timestamp
   }
 }
 
@@ -99,7 +100,7 @@ build {
 
     scripts = [
       "scripts/cis-benchmark.sh",
-      # "scripts/cis-docker.sh",
+      "scripts/cis-docker.sh",
       "scripts/cis-eks.sh",
       "scripts/cleanup.sh",
     ]
