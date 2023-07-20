@@ -106,7 +106,6 @@ build {
   }
 
   post-processor "manifest" {
-    type = manifest
     output = manifest.json
     strip_path = true
   }
