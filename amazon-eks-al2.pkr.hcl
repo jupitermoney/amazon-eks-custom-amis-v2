@@ -105,9 +105,9 @@ build {
     ]
   }
 
-  post-processor "manifest" "get-ami" {
-    output = manifest.json
-    strip_path = true
+  post-processor "manifest" {
+      output = "manifest.json"
+      strip_path = true
   }
 
 }
