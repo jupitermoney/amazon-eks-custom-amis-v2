@@ -105,3 +105,12 @@ build {
     ]
   }
 }
+
+
+"post-processors": [
+{
+  "type": "manifest",
+  "output": "manifest.json",
+  "strip_path": true
+}
+]
