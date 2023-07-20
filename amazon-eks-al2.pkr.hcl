@@ -104,13 +104,11 @@ build {
       "scripts/cleanup.sh",
     ]
   }
-}
 
+  post-processor "manifest" {
+    type = manifest
+    output = manifest.json
+    strip_path = true
+  }
 
-"post-processors": [
-{
-  "type": "manifest",
-  "output": "manifest.json",
-  "strip_path": true
 }
-]
