@@ -105,7 +105,7 @@ build {
     ]
   }
 
-  post-processor "manifest" "this" {
+  post-processor "manifest" "get-ami" {
     output = manifest.json
     strip_path = true
   }
