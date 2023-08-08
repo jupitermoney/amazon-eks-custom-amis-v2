@@ -330,7 +330,7 @@ echo "3.1.1 - ensure IP forwarding is disabled"
 sysctl_entry "net.ipv4.ip_forward = 0"
 sysctl_entry "net.ipv6.conf.all.forwarding = 1"
 sysctl_entry "net.ipv6.conf.all.disable_ipv6 = 1"
-sysctl_entry "et.ipv6.conf.default.disable_ipv6 = 1"
+sysctl_entry "net.ipv6.conf.default.disable_ipv6 = 1"
 
 echo "3.1.2 - ensure packet redirect sending is disabled"
 sysctl_entry "net.ipv4.conf.all.send_redirects = 0"
