@@ -7,6 +7,7 @@ set -o errexit
 # upgrade the operating system
 yum update -y && yum autoremove -y
 yum install -y parted system-lsb-core
+yum update -y kernel
 
 # enable the epel release
 amazon-linux-extras install epel -y

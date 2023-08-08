@@ -327,8 +327,8 @@ echo "2.2.4 - ensure LDAP client is not installed"
 yum_remove openldap-clients
 
 echo "3.1.1 - ensure IP forwarding is disabled"
-sysctl_entry "net.ipv4.ip_forward = 0"
-sysctl_entry "net.ipv6.conf.all.forwarding = 0"
+sysctl_entry "net.ipv4.ip_forward = 1"
+sysctl_entry "net.ipv6.conf.all.forwarding = 1"
 
 echo "3.1.2 - ensure packet redirect sending is disabled"
 sysctl_entry "net.ipv4.conf.all.send_redirects = 0"
@@ -363,6 +363,9 @@ set_conf_value max_log_file_action keep_logs /etc/audit/auditd.conf
 
 echo "4.1.2 - ensure auditd service is enabled"
 systemctl enable auditd && systemctl start auditd
+
+echo "4.1.2.4 ensure audit_backlog_limit is sufficient"
+echo "GRUB_CMDLINE_LINUX='audit_backlog_limit=8192'" >> /etc/default/grub
 
 echo "4.1.3 - ensure auditing for processes that start prior to auditd is enabled"
 sed -i 's/^\(GRUB_CMDLINE_LINUX_DEFAULT=.*\)"$/\1 audit=1"/' /etc/default/grub
@@ -434,6 +437,8 @@ echo "-a always,exit -F arch=b32 -S unlink -S unlinkat -S rename -S renameat -F 
 echo "4.1.15 - ensure changes to system administration scope (sudoers) is collected"
 echo "-w /etc/sudoers -p wa -k scope" >> /etc/audit/rules.d/cis.rules
 echo "-w /etc/sudoers.d/ -p wa -k scope" >> /etc/audit/rules.d/cis.rules
+echo "-a always,exit -F arch=b64 -C euid!=uid -F euid=0 -F auid>=1000 -F auid!=4294967295 -S execve -k actions" >> /etc/audit/rules.d/cis.rules
+echo "-a always,exit -F arch=b32 -C euid!=uid -F euid=0 -F auid>=1000 -F auid!=4294967295 -S execve -k actions" >> /etc/audit/rules.d/cis.rules
 
 echo "4.1.16 - ensure system administrator actions (sudolog) are collected"
 echo "-w /var/log/sudo.log -p wa -k actions" >> /etc/audit/rules.d/cis.rules
@@ -585,6 +590,7 @@ HostKey /etc/ssh/ssh_host_ed25519_key
 SyslogFacility AUTHPRIV
 AuthorizedKeysFile .ssh/authorized_keys
 PasswordAuthentication no
+AllowTcpForwarding no
 ChallengeResponseAuthentication no
 GSSAPIAuthentication yes
 GSSAPICleanupCredentials no
