@@ -867,3 +867,6 @@ sed -i "s/^PASS_MAX_DAYS.*/PASS_MAX_DAYS   60/" /etc/login.defs
 
 echo "5.4.1.10 Ensure delay between logon prompts on failure"
 echo "FAIL_DELAY 4" >> /etc/login.defs
+
+echo "5.3.10 Ensure certificate status checking for PKI authentication"
+sed -i 's/cert_policy = ca, signature;/cert_policy = ca, ocsp_on, signature;/g' /etc/pam_pkcs11/pam_pkcs11.conf
