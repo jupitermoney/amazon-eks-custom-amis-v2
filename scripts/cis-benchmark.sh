@@ -811,7 +811,7 @@ chmod 644 /etc/passwd
 
 echo "6.1.3 - ensure permissions on /etc/shadow are configured"
 chown root:root /etc/shadow
-chmod 000 /etc/shadow
+chmod 644 /etc/shadow
 
 echo "6.1.4 - ensure permissions on /etc/group are configured"
 chown root:root /etc/group
@@ -819,7 +819,7 @@ chmod 644 /etc/group
 
 echo "6.1.5 - ensure permissions on /etc/gshadow are configured"
 chown root:root /etc/gshadow
-chmod 000 /etc/gshadow
+chmod 644 /etc/gshadow
 
 echo "6.1.6 - ensure permissions on /etc/passwd- are configured"
 chown root:root /etc/passwd-
@@ -827,7 +827,7 @@ chmod u-x,go-wx /etc/passwd-
 
 echo "6.1.7 - ensure permissions on /etc/shadow- are configured"
 chown root:root /etc/shadow-
-chmod 000 /etc/shadow-
+chmod 644 /etc/shadow-
 
 echo "6.1.8 - ensure permissions on /etc/group- are configured"
 chown root:root /etc/group-
@@ -835,7 +835,7 @@ chmod u-x,go-wx /etc/group-
 
 echo "6.1.9 - ensure permissions on /etc/gshadow- are configured"
 chown root:root /etc/gshadow-
-chmod 000 /etc/gshadow-
+chmod 644 /etc/gshadow-
 
 echo "6.1.10 - ensure no world writable files exist"
 find / -xdev -type f -perm -0002
