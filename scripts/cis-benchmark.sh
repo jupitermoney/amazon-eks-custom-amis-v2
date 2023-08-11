@@ -728,19 +728,17 @@ account     required      pam_unix.so
 
 password    requisite     pam_pwquality.so try_first_pass local_users_only retry=3 authtok_type=
 password    sufficient    pam_unix.so try_first_pass use_authtok nullok sha512 shadow remember=5
-password    sufficient    pam_unix.so sha=512 shadow try_first_pass use_authtok
 password    required      pam_deny.so
-
 session     required      pam_lastlog.so showfailed
 session     optional      pam_keyinit.so revoke
 session     required      pam_limits.so
 -session    optional      pam_systemd.so
 session     [success=1 default=ignore] pam_succeed_if.so service in crond quiet use_uid
 session     required      pam_unix.so
-auth     required pam_faillock.so preauth audit silent deny=5 unlock_time=900
-auth     [success=1 default=bad] pam_unix.so
-auth     [default=die] pam_faillock.so authfail audit deny=5 unlock_time=900
-auth     sufficient pam_faillock.so authsucc audit deny=5 unlock_time=900
+auth        required      pam_faillock.so preauth audit silent deny=5 unlock_time=900
+auth        [success=1 default=bad] pam_unix.so
+auth        [default=die] pam_faillock.so authfail audit deny=5 unlock_time=900
+auth        sufficient    pam_faillock.so authsucc audit deny=5 unlock_time=900
 EOF
 
 cat > /etc/pam.d/system-auth <<EOF
@@ -750,10 +748,9 @@ auth        required      pam_deny.so
 
 account     required      pam_unix.so
 
+password    requisite     pam_pwquality.so try_first_pass local_users_only retry=3 authtok_type=
 password    sufficient    pam_unix.so try_first_pass use_authtok nullok sha512 shadow remember=5
 password    required      pam_deny.so
-password    requisite     pam_pwhistory.so use_authtok remember=5 retry=3
-
 
 session     optional      pam_keyinit.so revoke
 session     required      pam_limits.so
@@ -765,6 +762,7 @@ auth     [success=1 default=bad] pam_unix.so
 auth     [default=die] pam_faillock.so authfail audit deny=5 unlock_time=900
 auth     sufficient pam_faillock.so authsucc audit deny=5 unlock_time=900
 EOF
+
 
 echo "5.4.1.1 - ensure password expiration is 365 days or less"
 sed -i 's/^\(PASS_MAX_DAYS\s\).*/\190/' /etc/login.defs
