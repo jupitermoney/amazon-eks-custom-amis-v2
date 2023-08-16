@@ -416,6 +416,8 @@ echo "-w /usr/share/selinux/ -p wa -k MAC-policy" >> /etc/audit/rules.d/cis.rule
 echo "4.1.8 - ensure login and logout events are collected"
 echo "-w /var/log/lastlog -p wa -k logins" >> /etc/audit/rules.d/cis.rules
 echo "-w /var/run/faillock/ -p wa -k logins" >> /etc/audit/rules.d/cis.rules
+echo "-w /var/log/faillog -p wa -k logins" >> /etc/audit/rules.d/cis.rules
+echo "-w /var/log/tallylog -p wa -k logins" >> /etc/audit/rules.d/cis.rules
 
 echo "4.1.9 - ensure session initiation information is collected"
 echo "-w /var/run/utmp -p wa -k session" >> /etc/audit/rules.d/cis.rules
@@ -698,15 +700,6 @@ EOF
 
 echo "5.2.18 - ensure SSH access is limited"
 echo "[not scored] - customer responsible for this configuration"
-
-echo "5.3.1 - ensure password creation requirements are configured"
-cat > /etc/security/pwquality.conf <<EOF
-minlen = 14
-dcredit = -1
-ucredit = -1
-ocredit = -1
-lcredit = -1
-EOF
 
 echo "5.3.5 Ensure minimum and maximum requirements are set for password changes"
 cat > /etc/security/pwquality.conf <<EOF
