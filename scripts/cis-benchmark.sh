@@ -684,7 +684,6 @@ PermitRootLogin no
 PermitEmptyPasswords no
 StrictModes yes
 Compression no
-X11Forwarding yes
 UsePrivilegeSeparation no
 KerberosAuthentication no
 PermitUserEnvironment no
