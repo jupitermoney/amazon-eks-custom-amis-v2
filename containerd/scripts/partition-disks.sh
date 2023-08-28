@@ -56,11 +56,10 @@ disk_name='/dev/nvme1n1'
 # partition the disk
 parted -a optimal -s $disk_name \
     mklabel gpt \
-    mkpart var ext4 0% 10% \
-    mkpart varlog ext4 10% 20% \
-    mkpart varlogaudit ext4 20% 45% \
-    mkpart home ext4 45% 50% \
-    mkpart varlibdocker ext4 50% 90%
+    mkpart varlog ext4 0% 10% \
+    mkpart varlogaudit ext4 10% 35% \
+    mkpart home ext4 35% 45% \
+    mkpart var ext4 45% 90%
 
 # wait for the disks to settle
 sleep 5
@@ -72,6 +71,6 @@ migrate_and_mount_disk "${disk_name}p3" /var/log/audit  defaults,nofail,nodev,no
 migrate_and_mount_disk "${disk_name}p4" /home           defaults,nofail,nodev,nosuid
 
 # Create folder instead of starting/stopping docker daemon
-mkdir -p /var/lib/docker
-chown -R root:docker /var/lib/docker
-migrate_and_mount_disk "${disk_name}p5" /var/lib/docker defaults,nofail
+# mkdir -p /var/lib/docker
+# chown -R root:docker /var/lib/docker
+# migrate_and_mount_disk "${disk_name}p5" /var/lib/docker defaults,nofail
