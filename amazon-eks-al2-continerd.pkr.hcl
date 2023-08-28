@@ -4,7 +4,7 @@ locals {
   target_ami_name = "${var.ami_name_prefix}-${var.eks_version}-${local.timestamp}"
 }
 
-data "amazon-ami" "this" {
+data "amazon-ami" "this_containerd" {
   filters = {
     architecture        = var.source_ami_arch
     name                = "${var.ami_name_prefix}-${var.eks_version}-*"
@@ -21,7 +21,7 @@ data "amazon-ami" "this" {
   region = var.aws_region
 }
 
-source "amazon-ebs" "this" {
+source "amazon-ebs" "this_containerd" {
   ami_block_device_mappings {
     delete_on_termination = true
     device_name           = "/dev/xvda"
@@ -55,7 +55,7 @@ source "amazon-ebs" "this" {
     Name = local.target_ami_name
   }
 
-  source_ami   = data.amazon-ami.this.id
+  source_ami   = data.amazon-ami.this_containerd.id
   ssh_pty      = true
   ssh_username = var.source_ami_ssh_user
   subnet_id    = var.subnet_id
@@ -69,7 +69,7 @@ source "amazon-ebs" "this" {
 }
 
 build {
-  sources = ["source.amazon-ebs.this"]
+  sources = ["source.amazon-ebs.this_containerd"]
 
   provisioner "shell" {
     execute_command   = "echo 'packer' | {{ .Vars }} sudo -S -E bash -eux '{{ .Path }}'"
