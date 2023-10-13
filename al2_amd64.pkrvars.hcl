@@ -11,11 +11,11 @@ ami_block_device_mappings = [
 launch_block_device_mappings = [
   {
     device_name = "/dev/xvda"
-    volume_size = 10
+    volume_size = 20
   },
   {
     device_name = "/dev/xvdb"
-    volume_size = 64
+    volume_size = 80
   },
 ]
 
