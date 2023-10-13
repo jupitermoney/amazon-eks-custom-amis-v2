@@ -1,5 +1,6 @@
 instance_type   = "c6i.large"
 ami_description = "Amazon EKS Kubernetes AMI based on AmazonLinux2 OS"
+skip_region_validation = true
 
 ami_block_device_mappings = [
   {
