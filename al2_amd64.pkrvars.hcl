@@ -45,8 +45,8 @@ shell_provisioner2 = {
 shell_provisioner3 = {
   expect_disconnect = true
   scripts = [
-    "scripts/cis-benchmark.sh",
     "scripts/cis-eks.sh",
+    "scripts/cis-benchmark.sh",
     "scripts/cleanup.sh",
     "scripts/cis-benchmark-tmpmount.sh",
   ]
