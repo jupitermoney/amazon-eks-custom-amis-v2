@@ -24,7 +24,7 @@ systemd_disable() {
   local service_name=$1
 
   if systemctl is-enabled $service_name; then
-    systemctl disable $service_name
+   systemctl  --now mask $service_name
   fi
 }
 
@@ -58,32 +58,6 @@ unload_module squashfs
 
 echo "1.1.1.3 - ensure mounting of udf filesystems is disabled"
 unload_module udf
-
-echo "1.1.2 - 1.1.5 - ensure /tmp is configured noexec,nodev,nosuid options set on  /tmp partition"
-systemctl unmask tmp.mount && systemctl enable tmp.mount
-
-cat > /etc/systemd/system/local-fs.target.wants/tmp.mount <<EOF
-[Unit]
-Description=Temporary Directory
-Documentation=man:hier(7)
-Documentation=http://www.freedesktop.org/wiki/Software/systemd/APIFileSystems
-ConditionPathIsSymbolicLink=!/tmp
-DefaultDependencies=no
-Conflicts=umount.target
-Before=local-fs.target umount.target
-
-[Mount]
-What=tmpfs
-Where=/tmp
-Type=tmpfs
-Options=mode=1777,strictatime,noexec,nodev,nosuid
-
-# Make 'systemctl enable tmp.mount' work:
-[Install]
-WantedBy=local-fs.target
-EOF
-
-systemctl daemon-reload && systemctl restart tmp.mount
 
 echo "1.1.6 - 1.1.9 - ensure noexec,nodev,nosuid option set on /dev/shm"
 echo "tmpfs  /dev/shm  tmpfs  defaults,nodev,nosuid,noexec  0 0" >> /etc/fstab
@@ -124,9 +98,6 @@ echo "1.3.1 - ensure AIDE is installed"
 yum install -y aide
 aide --init
 mv /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz
-echo "All=p+i+n+u+g+s+m+S+sha512+acl+xattrs+selinux" >> /etc/aide.conf
-echo "/bin All" >> /etc/aide.conf
-echo "/sbin All" >> /etc/aide.conf
 
 echo "1.3.2 - ensure filesystem integrity is regularly checked"
 echo "0 5 * * * root /usr/sbin/aide --check" > /etc/cron.d/aide
@@ -198,15 +169,18 @@ sysctl_entry "kernel.randomize_va_space = 2"
 echo "1.5.4 - ensure prelink is disabled"
 yum_remove prelink
 
-echo "1.5.6 Ensure NIST FIPS-validated cryptography is configured - grub"
-sed -i 's/^\(GRUB_CMDLINE_LINUX_DEFAULT=.*\)"$/\1 fips=1"/' /etc/default/grub
-grub2-mkconfig -o /etc/grub2.cfg
-
 echo "1.6.1.4 - ensure the SELinux mode is enforcing or permissive"
 sed -i 's/SELINUX=disabled/SELINUX=enforcing/g' /etc/selinux/config
 
-echo "1.7.1.1 - ensure message of the day is configured properly"
+echo "1.6.1.7	ensure SETroubleshoot is not installed"
+yum_remove setroubleshoot
+
+echo "1.6.1.8	ensure the MCS Translation Service (mcstrans) is not installed"
+yum_remove mcstrans
+
+echo "1.7.1 - ensure message of the day is configured properly"
 rm -f /etc/cron.d/update-motd
+
 cat > /etc/update-motd.d/30-banner <<"OUTEREOF"
 #!/bin/sh
 cat <<"EOF"
@@ -245,20 +219,23 @@ By using this IS (which includes any device attached to this IS), you consent to
 -Notwithstanding the above, using this IS does not constitute consent to PM, LE or CI investigative searching or monitoring of the content of privileged communications, or work product, related to personal representation or services by attorneys, psychotherapists, or clergy, and their assistants. Such communications and work product are private and confidential. See User Agreement for details.
 EOF
 
-echo "1.7.1.4 - ensure permissions on /etc/motd are configured"
+echo "1.7.4 - ensure permissions on /etc/motd are configured"
 chown root:root /etc/motd
 chmod 644 /etc/motd
 
-echo "1.7.1.5 - ensure permissions on /etc/issue are configured"
+echo "1.7.5 - ensure permissions on /etc/issue are configured"
 chown root:root /etc/issue
 chmod 644 /etc/issue
 
-echo "1.7.1.6 - ensure permissions on /etc/issue.net are configured"
+echo "1.7.6 - ensure permissions on /etc/issue.net are configured"
 chown root:root /etc/issue.net
 chmod 644 /etc/issue.net
 
 echo "1.8 - ensure updates, patches, and additional security software are installed"
 yum update -y
+
+echo "2.1.1.2 - ensure chrony is configured"
+sed  -i  s/'OPTIONS=.*'/'OPTIONS="-F 2 -u chrony"'/ /etc/sysconfig/chronyd
 
 echo "2.1.2 - ensure X11 Window System is not installed"
 yum_remove xorg-x11*
@@ -305,15 +282,13 @@ yum_remove telnet-server
 echo "2.1.16 - ensure mail transfer agent is configured for local-only mode"
 netstat -an | grep LIST | grep ":25[[:space:]]"
 
-echo "2.1.17 - 2.1.18 - ensure NFS and RPC are not enabled"
-systemd_disable nfs-utils
+echo "2.1.17 ensure nfs-utils is not installed or the nfs-server service is masked"
 systemd_disable nfs-server
-systemd_disable rpcbind
+yum_remove nfs-utils
 
-echo "2.1.17 - ensure rsh Server is not enabled"
-systemd_disable rsh.socket
-systemd_disable rlogin.socket
-systemd_disable rexec.socket
+echo "2.1.18	ensure rpcbind is not installed or the rpcbind services are masked"
+systemd_disable rpcbind
+systemd_disable rpcbind.socket
 
 echo "2.1.19 - ensure rsync is not installed or the rsyncd service is masked"
 systemd_disable rsyncd
@@ -327,30 +302,54 @@ yum_remove rsh
 echo "2.2.3 - ensure talk client is not installed"
 yum_remove talk
 
-echo "2.2.3 - ensure telnet client is not installed"
+echo "2.2.4 - ensure telnet client is not installed"
 yum_remove telnet
 
-echo "2.2.25 Ensure unrestricted mail relaying is prevented"
-echo "smtpd_client_restrictions = permit_mynetworks,reject" >> /etc/postfix/main.cf
-
-echo "2.2.4 - ensure LDAP client is not installed"
+echo "2.2.5 - ensure LDAP client is not installed"
 yum_remove openldap-clients
 
-echo "3.1.1 - ensure IP forwarding is disabled"
+echo "3.2.1 - ensure IP forwarding is disabled"
 sysctl_entry "net.ipv4.ip_forward = 0"
-sysctl_entry "net.ipv6.conf.all.forwarding = 1"
-sysctl_entry "net.ipv6.conf.all.disable_ipv6 = 1"
-sysctl_entry "net.ipv6.conf.default.disable_ipv6 = 1"
+sysctl_entry "net.ipv6.conf.all.forwarding = 0"
 
-echo "3.1.2 - ensure packet redirect sending is disabled"
+echo "3.2.2 - ensure packet redirect sending is disabled"
 sysctl_entry "net.ipv4.conf.all.send_redirects = 0"
 sysctl_entry "net.ipv4.conf.default.send_redirects = 0"
 
-echo "3.2.10 Ensure rate limiting measures are set - sysctl"
-sysctl_entry "net.ipv4.tcp_invalid_ratelimit = 500"
 
-echo "3.3.1 - ensure TCP Wrappers is installed"
-yum install -y tcp_wrappers
+echo "3.3.1	ensure source routed packets are not accepted"
+sysctl_entry "net.ipv4.conf.all.accept_source_route = 0"
+sysctl_entry "net.ipv4.conf.default.accept_source_route = 0"
+sysctl_entry "net.ipv6.conf.all.accept_source_route = 0"
+sysctl_entry "net.ipv6.conf.default.accept_source_route = 0"
+
+
+echo "3.3.2	ensure ICMP redirects are not accepted"
+sysctl_entry "net.ipv4.conf.all.accept_redirects = 0"
+sysctl_entry "net.ipv4.conf.default.accept_redirects = 0"
+sysctl_entry "net.ipv6.conf.all.accept_redirects = 0"
+sysctl_entry "net.ipv6.conf.default.accept_redirects = 0"
+
+echo "3.3.3	ensure secure ICMP redirects are not accepted"
+sysctl_entry "net.ipv4.conf.all.secure_redirects = 0"
+sysctl_entry "net.ipv4.conf.default.secure_redirects = 0"
+
+echo "3.3.4	ensure suspicious packets are logged"
+sysctl_entry "net.ipv4.conf.all.log_martians = 1"
+sysctl_entry "net.ipv4.conf.default.log_martians = 1"
+
+echo "3.3.5	ensure broadcast ICMP requests are ignored"
+sysctl_entry "net.ipv4.icmp_echo_ignore_broadcasts = 1"
+
+echo "3.3.6	ensure bogus ICMP responses are ignored"
+sysctl_entry "net.ipv4.icmp_ignore_bogus_error_responses = 1"
+
+echo "3.3.8	ensure TCP SYN Cookies is enabled"
+sysctl_entry "net.ipv4.tcp_syncookies = 1"
+
+echo "3.3.9	ensure IPv6 router advertisements are not accepted"
+sysctl_entry "net.ipv6.conf.all.accept_ra = 0"
+sysctl_entry "net.ipv6.conf.default.accept_ra = 0"
 
 echo "3.4.1 - ensure DCCP is disabled"
 unload_module dccp
@@ -358,11 +357,81 @@ unload_module dccp
 echo "3.4.2 - ensure SCTP is disabled"
 unload_module sctp
 
-echo "3.4.3 - ensure RDS is disabled"
-unload_module rds
+echo "3.5.3.1.1 - ensure iptables packages are installed"
+yum install -y iptables iptables-services
 
-echo "3.4.4 - ensure TIPC is disabled"
-unload_module tipc
+echo "3.5.3.2.1-3.5.3.2.6 ensure iptables  rules configures"
+
+#cat >  /etc/sysconfig/iptables <<EOF
+# Flush iptables rules
+#-F
+
+# Allow inbound traffic for kubelet (so kubectl logs/exec works)
+iptables -I INPUT -p tcp -m tcp --dport 10250 -j ACCEPT
+
+# 3.5.3.2.3 ensure iptables rules exist for all open ports
+iptables -A INPUT -p tcp -m tcp --dport 22 -m state --state NEW -j ACCEPT
+
+# 3.5.3.2.2  ensure IPv4 outbound and established connections are configured (Manual)
+iptables -A OUTPUT -p tcp -m state --state NEW,ESTABLISHED -j ACCEPT
+iptables -A OUTPUT -p udp -m state --state NEW,ESTABLISHED -j ACCEPT
+iptables -A OUTPUT -p icmp -m state --state NEW,ESTABLISHED -j ACCEPT
+iptables -A INPUT -p tcp -m state --state ESTABLISHED -j ACCEPT
+iptables -A INPUT -p udp -m state --state ESTABLISHED -j ACCEPT
+iptables -A INPUT -p icmp -m state --state ESTABLISHED -j ACCEPT
+
+# 3.5.3.2.1 ensure IPv4 loopback traffic is configured (Automated)
+iptables -A INPUT -i lo -j ACCEPT
+iptables -A OUTPUT -o lo -j ACCEPT
+iptables -A INPUT -s 127.0.0.0/8 -j DROP
+
+# 3.5.3.2.4 ensure IPv4 default deny firewall policy (Automated)
+iptables -P INPUT DROP
+iptables -P OUTPUT DROP
+iptables -P FORWARD DROP
+
+
+#EOF
+
+service iptables save
+
+echo "3.5.3.2.6 ensure iptables is enabled and running"
+systemctl --now enable iptables
+
+echo "3.5.3.3.1-3.5.3.3.6 ensure ip6tables  rules configures"
+
+#cat >  /etc/sysconfig/ip6tables <<EOF
+# Flush iptables rules
+#-F
+
+# Allow inbound traffic for kubelet (so kubectl logs/exec works)
+ip6tables -I INPUT -p tcp -m tcp --dport 10250 -j ACCEPT
+
+# 3.5.3.3.3 ensure iptables rules exist for all open ports
+iptables -A INPUT -p tcp -m tcp --dport 22 -m state --state NEW -j ACCEPT
+
+# 3.5.3.3.2  ensure IPv6 outbound and established connections are configured (Manual)
+ip6tables -A OUTPUT -p tcp -m state --state NEW,ESTABLISHED -j ACCEPT
+ip6tables -A OUTPUT -p udp -m state --state NEW,ESTABLISHED -j ACCEPT
+ip6tables -A OUTPUT -p icmp -m state --state NEW,ESTABLISHED -j ACCEPT
+ip6tables -A INPUT -p tcp -m state --state ESTABLISHED -j ACCEPT
+ip6tables -A INPUT -p udp -m state --state ESTABLISHED -j ACCEPT
+ip6tables -A INPUT -p icmp -m state --state ESTABLISHED -j ACCEPT
+
+# 3.5.3.3.1 ensure IPv6 loopback traffic is configured (Automated)
+ip6tables -A INPUT -i lo -j ACCEPT
+ip6tables -A OUTPUT -o lo -j ACCEPT
+ip6tables -A INPUT -s ::1 -j DROP
+  
+# 3.5.3.3.4 ensure IPv6 default deny firewall policy (Automated)
+ip6tables -P INPUT DROP
+ip6tables -P OUTPUT DROP
+ip6tables -P FORWARD DROP
+
+#EOF
+service ip6tables save
+echo "3.5.3.3.6 ensure ip6tables is enabled and running"
+systemctl --now enable ip6tables
 
 echo "4.1.1.1 - ensure audit log storage size is configured"
 yum install -y audit
@@ -378,9 +447,6 @@ set_conf_value max_log_file_action keep_logs /etc/audit/auditd.conf
 
 echo "4.1.2 - ensure auditd service is enabled"
 systemctl enable auditd && systemctl start auditd
-
-echo "4.1.2.4 ensure audit_backlog_limit is sufficient"
-echo "GRUB_CMDLINE_LINUX='audit_backlog_limit=8192'" >> /etc/default/grub
 
 echo "4.1.3 - ensure auditing for processes that start prior to auditd is enabled"
 sed -i 's/^\(GRUB_CMDLINE_LINUX_DEFAULT=.*\)"$/\1 audit=1"/' /etc/default/grub
@@ -413,18 +479,16 @@ echo "4.1.6 - ensure events that modify the system's network environment are col
 echo "-w /etc/selinux/ -p wa -k MAC-policy" >> /etc/audit/rules.d/cis.rules
 echo "-w /usr/share/selinux/ -p wa -k MAC-policy" >> /etc/audit/rules.d/cis.rules
 
-echo "4.1.8 - ensure login and logout events are collected"
+echo "4.1.7 - ensure login and logout events are collected"
 echo "-w /var/log/lastlog -p wa -k logins" >> /etc/audit/rules.d/cis.rules
 echo "-w /var/run/faillock/ -p wa -k logins" >> /etc/audit/rules.d/cis.rules
-echo "-w /var/log/faillog -p wa -k logins" >> /etc/audit/rules.d/cis.rules
-echo "-w /var/log/tallylog -p wa -k logins" >> /etc/audit/rules.d/cis.rules
 
-echo "4.1.9 - ensure session initiation information is collected"
+echo "4.1.8 - ensure session initiation information is collected"
 echo "-w /var/run/utmp -p wa -k session" >> /etc/audit/rules.d/cis.rules
 echo "-w /var/log/wtmp -p wa -k logins" >> /etc/audit/rules.d/cis.rules
 echo "-w /var/log/btmp -p wa -k logins" >> /etc/audit/rules.d/cis.rules
 
-echo "4.1.10 - ensure discretionary access control permission modification events are collected"
+echo "4.1.9 - ensure discretionary access control permission modification events are collected"
 echo "-a always,exit -F arch=b64 -S chmod -S fchmod -S fchmodat -F auid>=1000 -F auid!=4294967295 -k perm_mod" >> /etc/audit/rules.d/cis.rules
 echo "-a always,exit -F arch=b32 -S chmod -S fchmod -S fchmodat -F auid>=1000 -F auid!=4294967295 -k perm_mod" >> /etc/audit/rules.d/cis.rules
 echo "-a always,exit -F arch=b64 -S chown -S fchown -S fchownat -S lchown -F auid>=1000 -F auid!=4294967295 -k perm_mod" >> /etc/audit/rules.d/cis.rules
@@ -432,94 +496,45 @@ echo "-a always,exit -F arch=b32 -S chown -S fchown -S fchownat -S lchown -F aui
 echo "-a always,exit -F arch=b64 -S setxattr -S lsetxattr -S fsetxattr -S removexattr -S lremovexattr -S fremovexattr -F auid>=1000 -F auid!=4294967295 -k perm_mod" >> /etc/audit/rules.d/cis.rules
 echo "-a always,exit -F arch=b32 -S setxattr -S lsetxattr -S fsetxattr -S removexattr -S lremovexattr -S fremovexattr -F auid>=1000 -F auid!=4294967295 -k perm_mod" >> /etc/audit/rules.d/cis.rules
 
-echo "4.1.11 - ensure unsuccessful unauthorized file access attempts are collected"
+echo "4.1.10 - ensure unsuccessful unauthorized file access attempts are collected"
 echo "-a always,exit -F arch=b64 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EACCES -F auid>=1000 -F auid!=4294967295 -k access" >> /etc/audit/rules.d/cis.rules
 echo "-a always,exit -F arch=b32 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EACCES -F auid>=1000 -F auid!=4294967295 -k access" >> /etc/audit/rules.d/cis.rules
 echo "-a always,exit -F arch=b64 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EPERM -F auid>=1000 -F auid!=4294967295 -k access" >> /etc/audit/rules.d/cis.rules
 echo "-a always,exit -F arch=b32 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EPERM -F auid>=1000 -F auid!=4294967295 -k access" >> /etc/audit/rules.d/cis.rules
 
-echo "4.1.12 - ensure use of privileged commands is collected"
+echo "4.1.11 - ensure use of privileged commands is collected"
 find / -xdev \( -perm -4000 -o -perm -2000 \) -type f | awk '{print \
 "-a always,exit -F path=" $1 " -F perm=x -F auid>=1000 -F auid!=4294967295 \
 -k privileged" }' >> /etc/audit/rules.d/cis.rules
 
-echo "4.1.13 - ensure successful file system mounts are collected"
-echo "-a always,exit -F arch=b64 -S mount -F auid>=1000 -F auid!=4294967295 -k privileged-mount" >> /etc/audit/rules.d/cis.rules
-echo "-a always,exit -F arch=b32 -S mount -F auid>=1000 -F auid!=4294967295 -k privileged-mount" >> /etc/audit/rules.d/cis.rules
-echo "-a always,exit -F path=/usr/bin/mount -F arch=b32 -S mount -F auid>=1000 -F auid!=4294967295 -k privileged-mount" >> /etc/audit/rules.d/cis.rules
+echo "4.1.12 - ensure successful file system mounts are collected"
+echo "-a always,exit -F arch=b64 -S mount -F auid>=1000 -F auid!=4294967295 -k mounts" >> /etc/audit/rules.d/cis.rules
+echo "-a always,exit -F arch=b32 -S mount -F auid>=1000 -F auid!=4294967295 -k mounts" >> /etc/audit/rules.d/cis.rules
 
-echo "4.1.3.15 Ensure all uses of the passwd command are audited"
-echo "-a always,exit -F path=/usr/bin/passwd -F auid>=1000 -F auid!=4294967295 -k privileged-passwd" >> /etc/audit/rules.d/cis.rules
-echo "-a always,exit -F path=/usr/bin/gpasswd -F auid>=1000 -F auid!=4294967295 -k privileged-passwd" >> /etc/audit/rules.d/cis.rules
-echo "-a always,exit -F path=/usr/bin/chage -F auid>=1000 -F auid!=4294967295 -k privileged-passwd" >> /etc/audit/rules.d/cis.rules
-echo "-a always,exit -F path=/usr/bin/newgrp -F auid>=1000 -F auid!=4294967295 -k privileged-priv_change" >> /etc/audit/rules.d/cis.rules
-echo "-a always,exit -F path=/usr/bin/chsh -F auid>=1000 -F auid!=4294967295 -k privileged-priv_change" >> /etc/audit/rules.d/cis.rules
-echo "-a always,exit -F path=/usr/bin/umount -F auid>=1000 -F auid!=4294967295 -k privileged-mount" >> /etc/audit/rules.d/cis.rules
-echo "-a always,exit -F path=/usr/sbin/postdrop -F auid>=1000 -F auid!=4294967295 -k privileged-postfix" >> /etc/audit/rules.d/cis.rules
-echo "-a always,exit -F path=/usr/sbin/postqueue -F auid>=1000 -F auid!=4294967295 -k privileged-postfix" >> /etc/audit/rules.d/cis.rules
-
-echo "4.1.20 Ensure the auditing processing failures are handled"
-echo "-f 2" >> /etc/audit/rules.d/cis.rules
-echo "-f 1" >> /etc/audit/rules.d/cis.rules
-
-echo "4.1.21 Ensure auditing of all privileged functions - setuid"
-echo "-a always,exit -F arch=b32 -S execve -C uid!=euid -F euid=0 -k setuid" >> /etc/audit/rules.d/cis.rules
-echo "-a always,exit -F arch=b64 -S execve -C uid!=euid -F euid=0 -k setuid" >> /etc/audit/rules.d/cis.rules
-echo "-a always,exit -F arch=b32 -S execve -C gid!=egid -F egid=0 -k setgid" >> /etc/audit/rules.d/cis.rules
-echo "-a always,exit -F arch=b64 -S execve -C gid!=egid -F egid=0 -k setgid" >> /etc/audit/rules.d/cis.rules
-
-echo "4.1.3.23 Ensure audit ssh-keysign command"
-echo "-a always,exit -F path=/usr/libexec/openssh/ssh-keysign -F auid>=1000 -F auid!=4294967295 -k privileged-ssh" >> /etc/audit/rules.d/cis.rules
-
-echo "4.1.2.11 Ensure audit of crontab command"
-echo "-a always,exit -F path=/usr/bin/crontab -F auid>=1000 -F auid!=4294967295 -k privileged-cron" >> /etc/audit/rules.d/cis.rules
-
-echo "4.1.2.12 Ensure audit pam_timestamp_check command"
-echo "-a always,exit -F path=/usr/sbin/pam_timestamp_check -F auid>=1000 -F auid!=4294967295 -k privileged-pam" >> /etc/audit/rules.d/cis.rules
-
-echo "4.1.2.13 Ensure audit of kmod command"
-echo "-w /usr/bin/kmod -p x -F auid!=4294967295 -k module-change" >> /etc/audit/rules.d/cis.rules
-
-echo "4.1.2.14 Ensure audit of the rmdir syscall"
-echo "-a always,exit -F arch=b32 -S rmdir -F auid>=1000 -F auid!=4294967295 -k delete" >> /etc/audit/rules.d/cis.rules
-echo "-a always,exit -F arch=b64 -S rmdir -F auid>=1000 -F auid!=4294967295 -k delete" >> /etc/audit/rules.d/cis.rules
-
-echo "4.1.2.17 Ensure audit of the create_module syscall"
-echo "-a always,exit -F arch=b32 -S create_module -k module-change" >> /etc/audit/rules.d/cis.rules
-echo "-a always,exit -F arch=b64 -S create_module -k module-change" >> /etc/audit/rules.d/cis.rules
-
-echo "4.1.14 - ensure file deletion events by users are collected"
+echo "4.1.13 - ensure file deletion events by users are collected"
 echo "-a always,exit -F arch=b64 -S unlink -S unlinkat -S rename -S renameat -F auid>=1000 -F auid!=4294967295 -k delete" >> /etc/audit/rules.d/cis.rules
 echo "-a always,exit -F arch=b32 -S unlink -S unlinkat -S rename -S renameat -F auid>=1000 -F auid!=4294967295 -k delete" >> /etc/audit/rules.d/cis.rules
 
-echo "4.1.15 - ensure changes to system administration scope (sudoers) is collected"
+echo "4.1.14 - ensure changes to system administration scope (sudoers) is collected"
 echo "-w /etc/sudoers -p wa -k scope" >> /etc/audit/rules.d/cis.rules
 echo "-w /etc/sudoers.d/ -p wa -k scope" >> /etc/audit/rules.d/cis.rules
-echo "-a always,exit -F arch=b64 -C euid!=uid -F euid=0 -F auid>=1000 -F auid!=4294967295 -S execve -k actions" >> /etc/audit/rules.d/cis.rules
+
+echo "4.1.15 - ensure system administrator command executions (sudo) are collected"
 echo "-a always,exit -F arch=b32 -C euid!=uid -F euid=0 -F auid>=1000 -F auid!=4294967295 -S execve -k actions" >> /etc/audit/rules.d/cis.rules
+echo "-a always,exit -F arch=b64 -C euid!=uid -F euid=0 -F auid>=1000 -F auid!=4294967295 -S execve -k actions" >> /etc/audit/rules.d/cis.rules
 
-echo "4.1.16 - ensure system administrator actions (sudolog) are collected"
-echo "-w /var/log/sudo.log -p wa -k actions" >> /etc/audit/rules.d/cis.rules
-
-echo "4.1.17 - ensure kernel module loading and unloading is collected"
+echo "4.1.16 - ensure kernel module loading and unloading is collected"
 echo "-w /sbin/insmod -p x -k modules" >> /etc/audit/rules.d/cis.rules
 echo "-w /sbin/rmmod -p x -k modules" >> /etc/audit/rules.d/cis.rules
 echo "-w /sbin/modprobe -p x -k modules" >> /etc/audit/rules.d/cis.rules
 echo "-a always,exit -F arch=b64 -S init_module -S delete_module -k modules" >> /etc/audit/rules.d/cis.rules
-echo "-a always,exit -F arch=b32 -S init_module -S delete_module -k modules" >> /etc/audit/rules.d/cis.rules
 
-echo "4.1.3.33 Ensure audit of semanage command"
-echo "-a always,exit -F path=/usr/sbin/semanage -F auid>=1000 -F auid!=4294967295 -k privileged-priv_change" >> /etc/audit/rules.d/cis.rules
-echo "-a always,exit -F path=/usr/sbin/unix_chkpwd -F auid>=1000 -F auid!=4294967295 -k privileged-passwd" >> /etc/audit/rules.d/cis.rules
-echo "-a always,exit -F path=/usr/sbin/setsebool -F auid>=1000 -F auid!=4294967295 -k privileged-priv_change" >> /etc/audit/rules.d/cis.rules
-echo "-a always,exit -F path=/usr/bin/chcon -F auid>=1000 -F auid!=4294967295 -k privileged-priv_change" >> /etc/audit/rules.d/cis.rules
-echo "-a always,exit -F path=/usr/sbin/setfiles -F auid>=1000 -F auid!=4294967295 -k privileged-priv_change" >> /etc/audit/rules.d/cis.rules
-echo "-a always,exit -F path=/usr/sbin/userhelper -F auid>=1000 -F auid!=4294967295 -k privileged-passwd" >> /etc/audit/rules.d/cis.rules
-echo "-a always,exit -F path=/usr/bin/su -F auid>=1000 -F auid!=4294967295 -k privileged-priv_change" >> /etc/audit/rules.d/cis.rules
-
-
-echo "4.1.18 - ensure the audit configuration is immutable"
+echo "4.1.17 - ensure the audit configuration is immutable"
 echo "-e 2" >> /etc/audit/rules.d/cis.rules
+
+echo "4.1.2.4 ensure audit_backlog_limit is sufficient" 
+sed -i 's/^\(GRUB_CMDLINE_LINUX_DEFAULT=.*\)"$/\1 audit_backlog_limit=8192"/' /etc/default/grub
+grub2-mkconfig -o /etc/grub2.cfg
 
 echo "4.2.1.1 - ensure rsyslog Service is enabled"
 yum install -y rsyslog
@@ -551,38 +566,48 @@ echo "[not scored] - customer responsible for this configuration"
 echo "4.2.1.5 - ensure remote rsyslog messages are only accepted on designated log hosts."
 echo "[not scored] - customer responsible for this configuration"
 
-echo "4.2.2.1 - ensure syslog-ng service is enabled"
-yum install -y syslog-ng
-systemctl enable syslog-ng && systemctl start syslog-ng
+echo "4.2.2.1 ensure journald is configured to send logs to rsyslog"
+echo "#4.2.2.1 ensure journald is configured to send logs to rsyslog" >> /etc/systemd/journald.conf
+echo "ForwardToSyslog=yes" >> /etc/systemd/journald.conf 
+echo "4.2.2.2 ensure journald is configured to compress large log files"
+echo "#4.2.2.2 ensure journald is configured to compress large log files" >> /etc/systemd/journald.conf 
+echo "Compress=yes" >> /etc/systemd/journald.conf 
+echo "4.2.2.3 ensure journald is configured to write logfiles to persistent disk"
+echo "#4.2.2.3 ensure journald is configured to write logfiles to persistent disk"
+echo "Storage=persistent" >> /etc/systemd/journald.conf
+# rsyslog service is setup
+#echo "4.2.2.1 - ensure syslog-ng service is enabled"
+#yum install -y syslog-ng
+#systemctl enable syslog-ng && systemctl start syslog-ng
 
-echo "4.2.2.2 - Ensure logging is configured"
-echo "log { source(src); source(chroots); filter(f_console); destination(console); };" >> /etc/syslog-ng/conf.d/cis.conf
-echo "log { source(src); source(chroots); filter(f_console); destination(xconsole); };" >> /etc/syslog-ng/conf.d/cis.conf
-echo "log { source(src); source(chroots); filter(f_newscrit); destination(newscrit); };" >> /etc/syslog-ng/conf.d/cis.conf
-echo "log { source(src); source(chroots); filter(f_newserr); destination(newserr); };" >> /etc/syslog-ng/conf.d/cis.conf
-echo "log { source(src); source(chroots); filter(f_newsnotice); destination(newsnotice); };" >> /etc/syslog-ng/conf.d/cis.conf
-echo "log { source(src); source(chroots); filter(f_mailinfo); destination(mailinfo); };" >> /etc/syslog-ng/conf.d/cis.conf
-echo "log { source(src); source(chroots); filter(f_mailwarn); destination(mailwarn); };" >> /etc/syslog-ng/conf.d/cis.conf
-echo "log { source(src); source(chroots); filter(f_mailerr);  destination(mailerr); };" >> /etc/syslog-ng/conf.d/cis.conf
-echo "log { source(src); source(chroots); filter(f_mail); destination(mail); };" >> /etc/syslog-ng/conf.d/cis.conf
-echo "log { source(src); source(chroots); filter(f_acpid); destination(acpid); flags(final); };" >> /etc/syslog-ng/conf.d/cis.conf
-echo "log { source(src); source(chroots); filter(f_acpid_full); destination(devnull); flags(final); };" >> /etc/syslog-ng/conf.d/cis.conf
-echo "log { source(src); source(chroots); filter(f_acpid_old); destination(acpid); flags(final); };" >> /etc/syslog-ng/conf.d/cis.conf
-echo "log { source(src); source(chroots); filter(f_netmgm); destination(netmgm); flags(final); };" >> /etc/syslog-ng/conf.d/cis.conf
-echo "log { source(src); source(chroots); filter(f_local); destination(localmessages); };" >> /etc/syslog-ng/conf.d/cis.conf
-echo "log { source(src); source(chroots); filter(f_messages); destination(messages); };" >> /etc/syslog-ng/conf.d/cis.conf
-echo "log { source(src); source(chroots); filter(f_iptables); destination(firewall); };" >> /etc/syslog-ng/conf.d/cis.conf
-echo "log { source(src); source(chroots); filter(f_warn); destination(warn); };" >> /etc/syslog-ng/conf.d/cis.conf
-pkill -HUP syslog-ng
+#echo "4.2.2.2 - ensure logging is configured"
+#echo "log { source(src); source(chroots); filter(f_console); destination(console); };" >> /etc/syslog-ng/conf.d/cis.conf
+#echo "log { source(src); source(chroots); filter(f_console); destination(xconsole); };" >> /etc/syslog-ng/conf.d/cis.conf
+#echo "log { source(src); source(chroots); filter(f_newscrit); destination(newscrit); };" >> /etc/syslog-ng/conf.d/cis.conf
+#echo "log { source(src); source(chroots); filter(f_newserr); destination(newserr); };" >> /etc/syslog-ng/conf.d/cis.conf
+#echo "log { source(src); source(chroots); filter(f_newsnotice); destination(newsnotice); };" >> /etc/syslog-ng/conf.d/cis.conf
+#echo "log { source(src); source(chroots); filter(f_mailinfo); destination(mailinfo); };" >> /etc/syslog-ng/conf.d/cis.conf
+#echo "log { source(src); source(chroots); filter(f_mailwarn); destination(mailwarn); };" >> /etc/syslog-ng/conf.d/cis.conf
+#echo "log { source(src); source(chroots); filter(f_mailerr);  destination(mailerr); };" >> /etc/syslog-ng/conf.d/cis.conf
+#echo "log { source(src); source(chroots); filter(f_mail); destination(mail); };" >> /etc/syslog-ng/conf.d/cis.conf
+#echo "log { source(src); source(chroots); filter(f_acpid); destination(acpid); flags(final); };" >> /etc/syslog-ng/conf.d/cis.conf
+#echo "log { source(src); source(chroots); filter(f_acpid_full); destination(devnull); flags(final); };" >> /etc/syslog-ng/conf.d/cis.conf
+#echo "log { source(src); source(chroots); filter(f_acpid_old); destination(acpid); flags(final); };" >> /etc/syslog-ng/conf.d/cis.conf
+#echo "log { source(src); source(chroots); filter(f_netmgm); destination(netmgm); flags(final); };" >> /etc/syslog-ng/conf.d/cis.conf
+#echo "log { source(src); source(chroots); filter(f_local); destination(localmessages); };" >> /etc/syslog-ng/conf.d/cis.conf
+#echo "log { source(src); source(chroots); filter(f_messages); destination(messages); };" >> /etc/syslog-ng/conf.d/cis.conf
+#echo "log { source(src); source(chroots); filter(f_iptables); destination(firewall); };" >> /etc/syslog-ng/conf.d/cis.conf
+#echo "log { source(src); source(chroots); filter(f_warn); destination(warn); };" >> /etc/syslog-ng/conf.d/cis.conf
+#pkill -HUP syslog-ng
 
-echo "4.2.2.3 - ensure syslog-ng default file permissions configured"
-echo "options { chain_hostnames(off); flush_lines(0); perm(0640); stats_freq(3600); threaded(yes); };" >> /etc/syslog-ng/conf.d/cis.conf
+#echo "4.2.2.3 - ensure syslog-ng default file permissions configured"
+#echo "options { chain_hostnames(off); flush_lines(0); perm(0640); stats_freq(3600); threaded(yes); };" >> /etc/syslog-ng/conf.d/cis.conf
 
-echo "4.2.2.4 - ensure syslog-ng is configured to send logs to a remote log host"
-echo "[not scored] - customer responsible for this configuration"
+#echo "4.2.2.4 - ensure syslog-ng is configured to send logs to a remote log host"
+#echo "[not scored] - customer responsible for this configuration"
 
-echo "4.2.2.5 - ensure remote syslog-ng messages are only accepted on designated log hosts"
-echo "[not scored] - customer responsible for this configuration"
+#echo "4.2.2.5 - ensure remote syslog-ng messages are only accepted on designated log hosts"
+#echo "[not scored] - customer responsible for this configuration"
 
 echo "4.2.3 - ensure rsyslog or syslog-ng is installed"
 echo "[not scored] - handled by previous steps"
@@ -598,8 +623,10 @@ sed -i -e 's|/var/log/wtmp 0664|/var/log/wtmp 0660|' /etc/tmpfiles.d/var.conf
 systemctl daemon-reload
 find /var/log -type f -exec chmod g-wx,o-rwx {} +
 
+
 echo "4.3 - ensure logrotate is configured"
 echo "[not scored] - customer responsible for this configuration"
+
 
 echo "5.1.1 - ensure cron daemon is enabled"
 systemctl enable crond
@@ -638,19 +665,29 @@ chmod og-rwx /etc/at.allow
 chown root:root /etc/cron.allow
 chown root:root /etc/at.allow
 
-echo "5.2.1 - ensure permissions on /etc/ssh/sshd_config are configured"
+echo "5.1.9	ensure at is restricted to authorized users"
+yum_remove at
+
+
+echo "5.2.2	ensure sudo commands use pty"
+echo -e "#Use pty\nDefaults use_pty" >> /etc/sudoers
+
+echo "5.2.3 - ensure sudo log file exists"
+echo -e "#Log File\nDefaults logfile="/var/log/sudo.log"" >> /etc/sudoers
+
+echo "5.3.1 - ensure permissions on /etc/ssh/sshd_config are configured"
 chown root:root /etc/ssh/sshd_config
 chmod og-rwx /etc/ssh/sshd_config
 
-echo "5.2.2 - ensure permissions on SSH private host key files are configured"
-find /etc/ssh -xdev -type f -name 'ssh_host_*_key' -exec chown root:ssh_keys {} \;
-find /etc/ssh -xdev -type f -name 'ssh_host_*_key' -exec chmod 0640 {} \;
+echo "5.3.2 - ensure permissions on SSH private host key files are configured"
+find /etc/ssh -xdev -type f -name 'ssh_host_*_key' -exec chown root:root {} \;
+find /etc/ssh -xdev -type f -name 'ssh_host_*_key' -exec chmod u-x,go-rwx {} \;
 
-echo "5.2.3 - ensure permissions on SSH public host key files are configured"
+echo "5.3.3 - ensure permissions on SSH public host key files are configured"
 find /etc/ssh -xdev -type f -name 'ssh_host_*_key.pub' -exec chmod 0644 {} \;
 find /etc/ssh -xdev -type f -name 'ssh_host_*_key.pub' -exec chown root:root {} \;
 
-echo "5.2.3 - 5.2.17, 5.2.19 - SSH Server Configuration"
+echo "5.3.3 - 5.3.17, 5.3.19 - SSH Server Configuration"
 cat > /etc/ssh/sshd_config <<EOF
 # Default Configuration
 HostKey /etc/ssh/ssh_host_rsa_key
@@ -659,10 +696,6 @@ HostKey /etc/ssh/ssh_host_ed25519_key
 SyslogFacility AUTHPRIV
 AuthorizedKeysFile .ssh/authorized_keys
 PasswordAuthentication no
-AllowTcpForwarding no
-RhostsRSAAuthentication no
-PrintLastLog yes
-IgnoreUserKnownHosts yes
 ChallengeResponseAuthentication no
 GSSAPIAuthentication yes
 GSSAPICleanupCredentials no
@@ -684,10 +717,6 @@ IgnoreRhosts yes
 HostbasedAuthentication no
 PermitRootLogin no
 PermitEmptyPasswords no
-StrictModes yes
-Compression no
-UsePrivilegeSeparation no
-KerberosAuthentication no
 PermitUserEnvironment no
 Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
 MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512,hmac-sha2-256
@@ -696,49 +725,35 @@ ClientAliveInterval 300
 ClientAliveCountMax 0
 LoginGraceTime 60
 Banner /etc/issue.net
+maxstartups 10:30:60
+AllowTcpForwarding no
 EOF
 
-echo "5.2.18 - ensure SSH access is limited"
+echo "5.3.18 - ensure SSH access is limited"
 echo "[not scored] - customer responsible for this configuration"
 
-echo "5.3.5 Ensure minimum and maximum requirements are set for password changes"
+echo "5.4.1 - ensure password creation requirements are configured"
 cat > /etc/security/pwquality.conf <<EOF
-difok = 8
-minclass = 4
-maxrepeat = 3
-maxclassrepeat = 4
-minlen = 15
+minlen = 14
+dcredit = -1
+ucredit = -1
+ocredit = -1
+lcredit = -1
 EOF
 
-echo "5.3.2 - 5.3.4 - Configure PAM"
+echo "5.4.2 - 5.4.4 - Configure PAM"
 cat > /etc/pam.d/password-auth <<EOF
 auth        required      pam_env.so
-auth        sufficient    pam_unix.so try_first_pass nullok
+auth        required      pam_faillock.so preauth silent audit deny=3 unlock_time=600
+auth        sufficient    pam_unix.so nullok try_first_pass
+auth        [default=die] pam_faillock.so authfail audit deny=3 unlock_time=600
+auth        requisite     pam_succeed_if.so uid >= 1000 quiet_success
 auth        required      pam_deny.so
 
-account     required      pam_unix.so
-
-password    requisite     pam_pwquality.so try_first_pass local_users_only retry=3 authtok_type=
-password    sufficient    pam_unix.so try_first_pass use_authtok nullok sha512 shadow remember=5
-password    required      pam_deny.so
-session     required      pam_lastlog.so showfailed
-session     optional      pam_keyinit.so revoke
-session     required      pam_limits.so
--session    optional      pam_systemd.so
-session     [success=1 default=ignore] pam_succeed_if.so service in crond quiet use_uid
-session     required      pam_unix.so
-auth        required      pam_faillock.so preauth audit silent deny=5 unlock_time=900
-auth        [success=1 default=bad] pam_unix.so
-auth        [default=die] pam_faillock.so authfail audit deny=5 unlock_time=900
-auth        sufficient    pam_faillock.so authsucc audit deny=5 unlock_time=900
-EOF
-
-cat > /etc/pam.d/system-auth <<EOF
-auth        required      pam_env.so
-auth        sufficient    pam_unix.so try_first_pass nullok
-auth        required      pam_deny.so
-
-account     required      pam_unix.so
+account required pam_faillock.so
+account required pam_unix.so
+account sufficient pam_localuser.so
+account sufficient pam_pam_succeed_if.so uid < 1000 quiet account required pam_permit.so
 
 password    requisite     pam_pwquality.so try_first_pass local_users_only retry=3 authtok_type=
 password    sufficient    pam_unix.so try_first_pass use_authtok nullok sha512 shadow remember=5
@@ -749,35 +764,60 @@ session     required      pam_limits.so
 -session     optional      pam_systemd.so
 session     [success=1 default=ignore] pam_succeed_if.so service in crond quiet use_uid
 session     required      pam_unix.so
-auth     required pam_faillock.so preauth audit silent deny=5 unlock_time=900
-auth     [success=1 default=bad] pam_unix.so
-auth     [default=die] pam_faillock.so authfail audit deny=5 unlock_time=900
-auth     sufficient pam_faillock.so authsucc audit deny=5 unlock_time=900
 EOF
 
+cat > /etc/pam.d/system-auth <<EOF
 
-echo "5.4.1.1 - ensure password expiration is 365 days or less"
+auth        required      pam_env.so
+auth        required      pam_faillock.so preauth silent audit deny=3 unlock_time=600
+auth        sufficient    pam_unix.so nullok try_first_pass
+auth        [default=die] pam_faillock.so authfail audit deny=3 unlock_time=600
+auth        requisite     pam_succeed_if.so uid >= 1000 quiet_success
+auth        required      pam_deny.so
+
+account required pam_faillock.so
+account required pam_unix.so
+account sufficient pam_localuser.so
+account sufficient pam_pam_succeed_if.so uid < 1000 quiet account required pam_permit.so
+
+password    requisite     pam_pwquality.so try_first_pass local_users_only retry=3 authtok_type=
+password    sufficient    pam_unix.so try_first_pass use_authtok nullok sha512 shadow remember=5
+password    required      pam_deny.so
+
+session     optional      pam_keyinit.so revoke
+session     required      pam_limits.so
+-session     optional      pam_systemd.so
+session     [success=1 default=ignore] pam_succeed_if.so service in crond quiet use_uid
+session     required      pam_unix.so
+EOF
+
+echo "5.5.1.1 - ensure password expiration is 365 days or less"
 sed -i 's/^\(PASS_MAX_DAYS\s\).*/\190/' /etc/login.defs
 
-echo "5.4.1.2 - ensure minimum days between password changes is 7 or more"
+echo "5.5.1.2 - ensure minimum days between password changes is 7 or more"
 sed -i 's/^\(PASS_MIN_DAYS\s\).*/\17/' /etc/login.defs
 
-echo "5.4.1.3 - ensure password expiration warning days is 7 or more"
+echo "5.5.1.3 - ensure password expiration warning days is 7 or more"
 sed -i 's/^\(PASS_WARN_AGE\s\).*/\17/' /etc/login.defs
 
-echo "5.4.1.4 - ensure inactive password lock is 30 days or less"
+echo "5.5.1.4 - ensure inactive password lock is 30 days or less"
 useradd -D -f 30
 
-echo "5.4.1.5 - ensure all users last password change date is in the past"
+echo "5.5.1.5 - ensure all users last password change date is in the past"
 cat /etc/shadow | cut -d: -f1
 
-echo "5.4.2 - ensure system accounts are non-login"
+echo "5.5.2 - ensure system accounts are non-login"
 egrep -v "^\+" /etc/passwd | awk -F: '($1!="root" && $1!="sync" && $1!="shutdown" && $1!="halt" && $3<1000 && $7!="/usr/sbin/nologin" && $7!="/bin/false") {print}'
 
-echo "5.4.3 - ensure default group for the root account is GID 0"
+echo "5.5.3 - ensure default group for the root account is GID 0"
 grep "^root:" /etc/passwd | cut -f4 -d:
 
-echo "5.4.4 - ensure default user umask is 027 or more restrictive"
+echo "5.5.4 - ensure default user shell timeout is 900 seconds or less"
+echo "TMOUT=600" >> /etc/profile
+echo "readonly TMOUT" >> /etc/profile
+echo "export TMOUT" >> /etc/profile
+
+echo "5.5.5 - ensure default user umask is 027 or more restrictive"
 echo "umask 027" >> /etc/bashrc
 echo "umask 027" >> /etc/profile
 # Just adding the umask isn't enough, all existing entries need to be fixed as
@@ -785,15 +825,13 @@ echo "umask 027" >> /etc/profile
 sed -i -e 's/\bumask\s\+\(002\|022\)/umask 027/' \
   /etc/bashrc /etc/profile /etc/profile.d/*.sh
 
-echo "5.4.5 - ensure default user shell timeout is 900 seconds or less"
-echo "TMOUT=600" >> /etc/bashrc
-echo "TMOUT=600" >> /etc/profile
 
-echo "5.5 - ensure root login is restricted to system console"
+echo "5.6 - ensure root login is restricted to system console"
 cat /etc/securetty
 
-echo "5.6 - ensure access to the su command is restricted"
-echo "auth required pam_wheel.so use_uid" >> /etc/pam.d/su
+echo "5.7 - ensure access to the su command is restricted"
+groupadd sugroup
+echo "auth required pam_wheel.so use_uid group=sugroup" >> /etc/pam.d/su
 
 echo "6.1.2 - ensure permissions on /etc/passwd are configured"
 chown root:root /etc/passwd
@@ -842,21 +880,44 @@ find / -xdev -type f -perm -4000
 echo "6.1.14 - audit SGID executables"
 find / -xdev -type f -perm -2000
 
+echo "6.2.1	ensure accounts in /etc/passwd use shadowed passwords	pass"
+sed -e 's/^\([a-zA-Z0-9_]*\):[^:]*:/\1:x:/' -i /etc/passwd
+
+echo "6.2.2 - ensure password fields are not empty"
+cat /etc/shadow | awk -F: '($2 == "" ) { print $1 " does not have a password "}'
+
+echo "6.2.3 ensure all groups in /etc/passwd exist in /etc/group"
+#!/bin/bash
+for i in $(cut -s -d: -f4 /etc/passwd | sort -u ); do grep -q -P "^.*?:[^:]*:$i:" /etc/group
+if [ $? -ne 0 ]; then
+echo "Group $i is referenced by /etc/passwd but does not exist in /etc/group"
+fi done
+
+echo "6.2.4 ensure shadow group is empty"
+awk -F: '($1=="shadow") {print $NF}' /etc/group
+awk -F: -v GID="$(awk -F: '($1=="shadow") {print $3}' /etc/group)" '($4==GID) {print $1}' /etc/passwd
+
+echo "6.2.5 ensure no duplicate user names exist"
+#!/bin/bash
+cut -d: -f1 /etc/passwd | sort | uniq -d | while read x; do echo "Duplicate login name ${x} in /etc/passwd"
+done
+
+echo "6.2.6 ensure no duplicate group names exist"
+#!/bin/bash
+cut -d: -f1 /etc/group | sort | uniq -d | while read -r x; do echo "Duplicate group name ${x} in /etc/group"
+done
+
+echo "6.2.8 ensure no duplicate GIDs exist "
+#!/bin/bash
+cut -d: -f3 /etc/group | sort | uniq -d | while read -r x; do echo "Duplicate GID ($x) in /etc/group"
+done
+
+
+echo "6.2.9 ensure root is the only UID 0 account"
+awk -F: '($3 == 0) { print $1 }' /etc/passwd
+
 echo "6.2.1 - ensure password fields are not empty"
 cat /etc/shadow | awk -F: '($2 == "" ) { print $1 " does not have a password "}'
 
-echo "6.3 Ensure removal of software components after update"
-echo "clean_requirements_on_remove=1" >> /etc/yum.conf
-echo "localpkg_gpgcheck=1" >> /etc/yum.conf
-
-echo "5.9 Ensure number of concurrent sessions is limited"
-echo "* hard maxlogins 10" >> /etc/security/limits.conf
-
-echo "5.4.1.8 Ensure password expiration is 60 Day maximum for new users"
-sed -i "s/^PASS_MAX_DAYS.*/PASS_MAX_DAYS   60/" /etc/login.defs
-
-echo "5.4.1.10 Ensure delay between logon prompts on failure"
-echo "FAIL_DELAY 4" >> /etc/login.defs
-
-echo "5.3.10 Ensure certificate status checking for PKI authentication"
-sed -i 's/cert_policy = ca, signature;/cert_policy = ca, ocsp_on, signature;/g' /etc/pam_pkcs11/pam_pkcs11.conf
+echo "6.2.1 - ensure password fields are not empty"
+cat /etc/shadow | awk -F: '($2 == "" ) { print $1 " does not have a password "}'
