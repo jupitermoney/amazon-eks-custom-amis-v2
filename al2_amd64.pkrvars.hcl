@@ -1,7 +1,5 @@
-ami_name_prefix = "amazon-eks-arm64"
-ami_type        = "amazon-linux-2-arm64"
-ami_description = "Amazon EKS Kubernetes arm64 AMI based on AmazonLinux2 OS"
-instance_type   = "c6g.large"
+instance_type   = "c6i.large"
+ami_description = "Amazon EKS Kubernetes AMI based on AmazonLinux2 OS"
 
 ami_block_device_mappings = [
   {
@@ -31,11 +29,11 @@ shell_provisioner1 = {
 shell_provisioner2 = {
   expect_disconnect = true
   // Pass in values below if enabling proxy support
-  // environment_vars = [
-  //     "HTTP_PROXY=xxx",
-  //     "HTTPS_PROXY=xxx",
-  //     "NO_PROXY=xxx",
-  //   ]
+ environment_vars = [
+   //     "HTTP_PROXY=xxx",
+  //     "HTTPS_PROXY=xxx",    
+ //      "NO_PROXY=xxx",
+   ]
   scripts = [
     "scripts/partition-disks.sh",
     "scripts/configure-proxy.sh",
