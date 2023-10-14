@@ -357,81 +357,81 @@ unload_module dccp
 echo "3.4.2 - ensure SCTP is disabled"
 unload_module sctp
 
-echo "3.5.3.1.1 - ensure iptables packages are installed"
-yum install -y iptables iptables-services
+# echo "3.5.3.1.1 - ensure iptables packages are installed"
+# yum install -y iptables iptables-services
 
-echo "3.5.3.2.1-3.5.3.2.6 ensure iptables  rules configures"
+# echo "3.5.3.2.1-3.5.3.2.6 ensure iptables  rules configures"
 
-#cat >  /etc/sysconfig/iptables <<EOF
-# Flush iptables rules
-#-F
+# #cat >  /etc/sysconfig/iptables <<EOF
+# # Flush iptables rules
+# #-F
 
-# Allow inbound traffic for kubelet (so kubectl logs/exec works)
-iptables -I INPUT -p tcp -m tcp --dport 10250 -j ACCEPT
+# # Allow inbound traffic for kubelet (so kubectl logs/exec works)
+# iptables -I INPUT -p tcp -m tcp --dport 10250 -j ACCEPT
 
-# 3.5.3.2.3 ensure iptables rules exist for all open ports
-iptables -A INPUT -p tcp -m tcp --dport 22 -m state --state NEW -j ACCEPT
+# # 3.5.3.2.3 ensure iptables rules exist for all open ports
+# iptables -A INPUT -p tcp -m tcp --dport 22 -m state --state NEW -j ACCEPT
 
-# 3.5.3.2.2  ensure IPv4 outbound and established connections are configured (Manual)
-iptables -A OUTPUT -p tcp -m state --state NEW,ESTABLISHED -j ACCEPT
-iptables -A OUTPUT -p udp -m state --state NEW,ESTABLISHED -j ACCEPT
-iptables -A OUTPUT -p icmp -m state --state NEW,ESTABLISHED -j ACCEPT
-iptables -A INPUT -p tcp -m state --state ESTABLISHED -j ACCEPT
-iptables -A INPUT -p udp -m state --state ESTABLISHED -j ACCEPT
-iptables -A INPUT -p icmp -m state --state ESTABLISHED -j ACCEPT
+# # 3.5.3.2.2  ensure IPv4 outbound and established connections are configured (Manual)
+# iptables -A OUTPUT -p tcp -m state --state NEW,ESTABLISHED -j ACCEPT
+# iptables -A OUTPUT -p udp -m state --state NEW,ESTABLISHED -j ACCEPT
+# iptables -A OUTPUT -p icmp -m state --state NEW,ESTABLISHED -j ACCEPT
+# iptables -A INPUT -p tcp -m state --state ESTABLISHED -j ACCEPT
+# iptables -A INPUT -p udp -m state --state ESTABLISHED -j ACCEPT
+# iptables -A INPUT -p icmp -m state --state ESTABLISHED -j ACCEPT
 
-# 3.5.3.2.1 ensure IPv4 loopback traffic is configured (Automated)
-iptables -A INPUT -i lo -j ACCEPT
-iptables -A OUTPUT -o lo -j ACCEPT
-iptables -A INPUT -s 127.0.0.0/8 -j DROP
+# # 3.5.3.2.1 ensure IPv4 loopback traffic is configured (Automated)
+# iptables -A INPUT -i lo -j ACCEPT
+# iptables -A OUTPUT -o lo -j ACCEPT
+# iptables -A INPUT -s 127.0.0.0/8 -j DROP
 
-# 3.5.3.2.4 ensure IPv4 default deny firewall policy (Automated)
-iptables -P INPUT DROP
-iptables -P OUTPUT DROP
-iptables -P FORWARD DROP
+# # 3.5.3.2.4 ensure IPv4 default deny firewall policy (Automated)
+# iptables -P INPUT DROP
+# iptables -P OUTPUT DROP
+# iptables -P FORWARD DROP
 
 
-#EOF
+# #EOF
 
-service iptables save
+# service iptables save
 
-echo "3.5.3.2.6 ensure iptables is enabled and running"
-systemctl --now enable iptables
+# echo "3.5.3.2.6 ensure iptables is enabled and running"
+# systemctl --now enable iptables
 
-echo "3.5.3.3.1-3.5.3.3.6 ensure ip6tables  rules configures"
+# echo "3.5.3.3.1-3.5.3.3.6 ensure ip6tables  rules configures"
 
-#cat >  /etc/sysconfig/ip6tables <<EOF
-# Flush iptables rules
-#-F
+# #cat >  /etc/sysconfig/ip6tables <<EOF
+# # Flush iptables rules
+# #-F
 
-# Allow inbound traffic for kubelet (so kubectl logs/exec works)
-ip6tables -I INPUT -p tcp -m tcp --dport 10250 -j ACCEPT
+# # Allow inbound traffic for kubelet (so kubectl logs/exec works)
+# ip6tables -I INPUT -p tcp -m tcp --dport 10250 -j ACCEPT
 
-# 3.5.3.3.3 ensure iptables rules exist for all open ports
-iptables -A INPUT -p tcp -m tcp --dport 22 -m state --state NEW -j ACCEPT
+# # 3.5.3.3.3 ensure iptables rules exist for all open ports
+# iptables -A INPUT -p tcp -m tcp --dport 22 -m state --state NEW -j ACCEPT
 
-# 3.5.3.3.2  ensure IPv6 outbound and established connections are configured (Manual)
-ip6tables -A OUTPUT -p tcp -m state --state NEW,ESTABLISHED -j ACCEPT
-ip6tables -A OUTPUT -p udp -m state --state NEW,ESTABLISHED -j ACCEPT
-ip6tables -A OUTPUT -p icmp -m state --state NEW,ESTABLISHED -j ACCEPT
-ip6tables -A INPUT -p tcp -m state --state ESTABLISHED -j ACCEPT
-ip6tables -A INPUT -p udp -m state --state ESTABLISHED -j ACCEPT
-ip6tables -A INPUT -p icmp -m state --state ESTABLISHED -j ACCEPT
+# # 3.5.3.3.2  ensure IPv6 outbound and established connections are configured (Manual)
+# ip6tables -A OUTPUT -p tcp -m state --state NEW,ESTABLISHED -j ACCEPT
+# ip6tables -A OUTPUT -p udp -m state --state NEW,ESTABLISHED -j ACCEPT
+# ip6tables -A OUTPUT -p icmp -m state --state NEW,ESTABLISHED -j ACCEPT
+# ip6tables -A INPUT -p tcp -m state --state ESTABLISHED -j ACCEPT
+# ip6tables -A INPUT -p udp -m state --state ESTABLISHED -j ACCEPT
+# ip6tables -A INPUT -p icmp -m state --state ESTABLISHED -j ACCEPT
 
-# 3.5.3.3.1 ensure IPv6 loopback traffic is configured (Automated)
-ip6tables -A INPUT -i lo -j ACCEPT
-ip6tables -A OUTPUT -o lo -j ACCEPT
-ip6tables -A INPUT -s ::1 -j DROP
+# # 3.5.3.3.1 ensure IPv6 loopback traffic is configured (Automated)
+# ip6tables -A INPUT -i lo -j ACCEPT
+# ip6tables -A OUTPUT -o lo -j ACCEPT
+# ip6tables -A INPUT -s ::1 -j DROP
   
-# 3.5.3.3.4 ensure IPv6 default deny firewall policy (Automated)
-ip6tables -P INPUT DROP
-ip6tables -P OUTPUT DROP
-ip6tables -P FORWARD DROP
+# # 3.5.3.3.4 ensure IPv6 default deny firewall policy (Automated)
+# ip6tables -P INPUT DROP
+# ip6tables -P OUTPUT DROP
+# ip6tables -P FORWARD DROP
 
-#EOF
-service ip6tables save
-echo "3.5.3.3.6 ensure ip6tables is enabled and running"
-systemctl --now enable ip6tables
+# #EOF
+# service ip6tables save
+# echo "3.5.3.3.6 ensure ip6tables is enabled and running"
+# systemctl --now enable ip6tables
 
 echo "4.1.1.1 - ensure audit log storage size is configured"
 yum install -y audit
