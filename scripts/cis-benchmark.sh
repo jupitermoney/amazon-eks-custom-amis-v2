@@ -308,48 +308,18 @@ yum_remove telnet
 echo "2.2.5 - ensure LDAP client is not installed"
 yum_remove openldap-clients
 
-echo "3.2.1 - ensure IP forwarding is disabled"
+echo "3.1.1 - ensure IP forwarding is disabled"
 sysctl_entry "net.ipv4.ip_forward = 0"
-sysctl_entry "net.ipv6.conf.all.forwarding = 0"
+sysctl_entry "net.ipv6.conf.all.forwarding = 1"
+sysctl_entry "net.ipv6.conf.all.disable_ipv6 = 1"
+sysctl_entry "net.ipv6.conf.default.disable_ipv6 = 1"
 
-echo "3.2.2 - ensure packet redirect sending is disabled"
+echo "3.1.2 - ensure packet redirect sending is disabled"
 sysctl_entry "net.ipv4.conf.all.send_redirects = 0"
 sysctl_entry "net.ipv4.conf.default.send_redirects = 0"
 
-
-echo "3.3.1	ensure source routed packets are not accepted"
-sysctl_entry "net.ipv4.conf.all.accept_source_route = 0"
-sysctl_entry "net.ipv4.conf.default.accept_source_route = 0"
-sysctl_entry "net.ipv6.conf.all.accept_source_route = 0"
-sysctl_entry "net.ipv6.conf.default.accept_source_route = 0"
-
-
-echo "3.3.2	ensure ICMP redirects are not accepted"
-sysctl_entry "net.ipv4.conf.all.accept_redirects = 0"
-sysctl_entry "net.ipv4.conf.default.accept_redirects = 0"
-sysctl_entry "net.ipv6.conf.all.accept_redirects = 0"
-sysctl_entry "net.ipv6.conf.default.accept_redirects = 0"
-
-echo "3.3.3	ensure secure ICMP redirects are not accepted"
-sysctl_entry "net.ipv4.conf.all.secure_redirects = 0"
-sysctl_entry "net.ipv4.conf.default.secure_redirects = 0"
-
-echo "3.3.4	ensure suspicious packets are logged"
-sysctl_entry "net.ipv4.conf.all.log_martians = 1"
-sysctl_entry "net.ipv4.conf.default.log_martians = 1"
-
-echo "3.3.5	ensure broadcast ICMP requests are ignored"
-sysctl_entry "net.ipv4.icmp_echo_ignore_broadcasts = 1"
-
-echo "3.3.6	ensure bogus ICMP responses are ignored"
-sysctl_entry "net.ipv4.icmp_ignore_bogus_error_responses = 1"
-
-echo "3.3.8	ensure TCP SYN Cookies is enabled"
-sysctl_entry "net.ipv4.tcp_syncookies = 1"
-
-echo "3.3.9	ensure IPv6 router advertisements are not accepted"
-sysctl_entry "net.ipv6.conf.all.accept_ra = 0"
-sysctl_entry "net.ipv6.conf.default.accept_ra = 0"
+echo "3.2.10 Ensure rate limiting measures are set - sysctl"
+sysctl_entry "net.ipv4.tcp_invalid_ratelimit = 500"
 
 echo "3.4.1 - ensure DCCP is disabled"
 unload_module dccp
