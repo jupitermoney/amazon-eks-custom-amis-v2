@@ -37,8 +37,8 @@ shell_provisioner2 = {
    ]
   scripts = [
     "scripts/partition-disks.sh",
-  //  "scripts/configure-proxy.sh",
-  //  "scripts/configure-containers.sh",
+    "scripts/configure-proxy.sh",
+    "scripts/configure-containers.sh",
   ]
 }
 
@@ -46,7 +46,7 @@ shell_provisioner3 = {
   expect_disconnect = true
   scripts = [
     "scripts/cis-eks.sh",
-    "scripts/cis-benchmark.sh",
+  //  "scripts/cis-benchmark.sh",
     "scripts/cleanup.sh",
     "scripts/cis-benchmark-tmpmount.sh",
   ]
