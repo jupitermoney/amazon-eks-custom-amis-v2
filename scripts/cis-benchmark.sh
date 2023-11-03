@@ -669,6 +669,8 @@ PasswordAuthentication no
 ChallengeResponseAuthentication no
 GSSAPIAuthentication yes
 GSSAPICleanupCredentials no
+IgnoreUserKnownHosts yes
+StrictModes yes
 UsePAM yes
 AcceptEnv LANG LC_CTYPE LC_NUMERIC LC_TIME LC_COLLATE LC_MONETARY LC_MESSAGES
 AcceptEnv LC_PAPER LC_NAME LC_ADDRESS LC_TELEPHONE LC_MEASUREMENT
@@ -719,6 +721,7 @@ auth        sufficient    pam_unix.so nullok try_first_pass
 auth        [default=die] pam_faillock.so authfail audit deny=3 unlock_time=600
 auth        requisite     pam_succeed_if.so uid >= 1000 quiet_success
 auth        required      pam_deny.so
+auth        sufficient    pam_unix.so try_first_pass nullok
 
 account required pam_faillock.so
 account required pam_unix.so
@@ -734,6 +737,7 @@ session     required      pam_limits.so
 -session     optional      pam_systemd.so
 session     [success=1 default=ignore] pam_succeed_if.so service in crond quiet use_uid
 session     required      pam_unix.so
+session     required      pam_lastlog.so showfailed
 EOF
 
 cat > /etc/pam.d/system-auth <<EOF
@@ -744,7 +748,14 @@ auth        sufficient    pam_unix.so nullok try_first_pass
 auth        [default=die] pam_faillock.so authfail audit deny=3 unlock_time=600
 auth        requisite     pam_succeed_if.so uid >= 1000 quiet_success
 auth        required      pam_deny.so
+auth        sufficient    pam_unix.so try_first_pass nullok
+auth     required pam_faillock.so preauth audit silent deny=5 unlock_time=900
+auth     [success=1 default=bad] pam_unix.so
+auth     [default=die] pam_faillock.so authfail audit deny=5 unlock_time=900
+auth     sufficient pam_faillock.so authsucc audit deny=5 unlock_time=900
 
+
+account     required      pam_unix.so
 account required pam_faillock.so
 account required pam_unix.so
 account sufficient pam_localuser.so
@@ -759,6 +770,8 @@ session     required      pam_limits.so
 -session     optional      pam_systemd.so
 session     [success=1 default=ignore] pam_succeed_if.so service in crond quiet use_uid
 session     required      pam_unix.so
+
+
 EOF
 
 echo "5.5.1.1 - ensure password expiration is 365 days or less"
@@ -891,3 +904,97 @@ cat /etc/shadow | awk -F: '($2 == "" ) { print $1 " does not have a password "}'
 
 echo "6.2.1 - ensure password fields are not empty"
 cat /etc/shadow | awk -F: '($2 == "" ) { print $1 " does not have a password "}'
+
+#adding new command
+echo "5.3.10 Ensure certificate status checking for PKI authentication"
+sed -i 's/cert_policy = ca, signature;/cert_policy = ca, ocsp_on, signature;/g' /etc/pam_pkcs11/pam_pkcs11.conf
+
+echo "1.5.6 Ensure NIST FIPS-validated cryptography is configured - grub"
+sed -i 's/^\(GRUB_CMDLINE_LINUX_DEFAULT=.*\)"$/\1 fips=1"/' /etc/default/grub
+grub2-mkconfig -o /etc/grub2.cfg
+
+echo "2.2.25 Ensure unrestricted mail relaying is prevented"
+echo "smtpd_client_restrictions = permit_mynetworks,reject" >> /etc/postfix/main.cf
+
+echo "4.1.3.15 Ensure all uses of the passwd command are audited"
+echo "-a always,exit -F path=/usr/bin/passwd -F auid>=1000 -F auid!=4294967295 -k privileged-passwd" >> /etc/audit/rules.d/cis.rules
+echo "-a always,exit -F path=/usr/sbin/unix_chkpwd -F auid>=1000 -F auid!=4294967295 -k privileged-passwd" >> /etc/audit/rules.d/cis.rules
+echo "-a always,exit -F path=/usr/sbin/setsebool -F auid>=1000 -F auid!=4294967295 -k privileged-priv_change" >> /etc/audit/rules.d/cis.rules
+echo "-a always,exit -F path=/usr/bin/chcon -F auid>=1000 -F auid!=4294967295 -k privileged-priv_change" >> /etc/audit/rules.d/cis.rules
+echo "-a always,exit -F path=/usr/sbin/setfiles -F auid>=1000 -F auid!=4294967295 -k privileged-priv_change" >> /etc/audit/rules.d/cis.rules
+echo "-a always,exit -F path=/usr/sbin/userhelper -F auid>=1000 -F auid!=4294967295 -k privileged-passwd" >> /etc/audit/rules.d/cis.rules
+echo "-a always,exit -F path=/usr/bin/su -F auid>=1000 -F auid!=4294967295 -k privileged-priv_change" >> /etc/audit/rules.d/cis.rules
+
+echo "4.1.3.23 Ensure audit ssh-keysign command"
+echo "-a always,exit -F path=/usr/libexec/openssh/ssh-keysign -F auid>=1000 -F auid!=4294967295 -k privileged-ssh" >> /etc/audit/rules.d/cis.rules
+
+echo "4.1.2.11 Ensure audit of crontab command"
+echo "-a always,exit -F path=/usr/bin/crontab -F auid>=1000 -F auid!=4294967295 -k privileged-cron" >> /etc/audit/rules.d/cis.rules
+
+echo "4.1.2.12 Ensure audit pam_timestamp_check command"
+echo "-a always,exit -F path=/usr/sbin/pam_timestamp_check -F auid>=1000 -F auid!=4294967295 -k privileged-pam" >> /etc/audit/rules.d/cis.rules
+
+echo "4.1.2.13 Ensure audit of kmod command"
+echo "-w /usr/bin/kmod -p x -F auid!=4294967295 -k module-change" >> /etc/audit/rules.d/cis.rules
+
+echo "4.1.2.14 Ensure audit of the rmdir syscall"
+echo "-a always,exit -F arch=b32 -S rmdir -F auid>=1000 -F auid!=4294967295 -k delete" >> /etc/audit/rules.d/cis.rules
+echo "-a always,exit -F arch=b64 -S rmdir -F auid>=1000 -F auid!=4294967295 -k delete" >> /etc/audit/rules.d/cis.rules
+
+echo "4.1.14 - ensure file deletion events by users are collected"
+echo "-a always,exit -F arch=b64 -S unlink -S unlinkat -S rename -S renameat -F auid>=1000 -F auid!=4294967295 -k delete" >> /etc/audit/rules.d/cis.rules
+echo "-a always,exit -F arch=b32 -S unlink -S unlinkat -S rename -S renameat -F auid>=1000 -F auid!=4294967295 -k delete" >> /etc/audit/rules.d/cis.rules
+
+echo "4.1.2.17 Ensure audit of the create_module syscall"
+echo "-a always,exit -F arch=b32 -S create_module -k module-change" >> /etc/audit/rules.d/cis.rules
+echo "-a always,exit -F arch=b64 -S create_module -k module-change" >> /etc/audit/rules.d/cis.rules
+
+echo "4.1.3.33 Ensure audit of semanage command"
+echo "-a always,exit -F path=/usr/sbin/semanage -F auid>=1000 -F auid!=4294967295 -k privileged-priv_change" >> /etc/audit/rules.d/cis.rules
+echo "-a always,exit -F path=/usr/sbin/unix_chkpwd -F auid>=1000 -F auid!=4294967295 -k privileged-passwd" >> /etc/audit/rules.d/cis.rules
+echo "-a always,exit -F path=/usr/sbin/setsebool -F auid>=1000 -F auid!=4294967295 -k privileged-priv_change" >> /etc/audit/rules.d/cis.rules
+echo "-a always,exit -F path=/usr/bin/chcon -F auid>=1000 -F auid!=4294967295 -k privileged-priv_change" >> /etc/audit/rules.d/cis.rules
+echo "-a always,exit -F path=/usr/sbin/setfiles -F auid>=1000 -F auid!=4294967295 -k privileged-priv_change" >> /etc/audit/rules.d/cis.rules
+echo "-a always,exit -F path=/usr/sbin/userhelper -F auid>=1000 -F auid!=4294967295 -k privileged-passwd" >> /etc/audit/rules.d/cis.rules
+echo "-a always,exit -F path=/usr/bin/su -F auid>=1000 -F auid!=4294967295 -k privileged-priv_change" >> /etc/audit/rules.d/cis.rules
+
+echo "4.1.13 - ensure successful file system mounts are collected"
+echo "-a always,exit -F arch=b64 -S mount -F auid>=1000 -F auid!=4294967295 -k privileged-mount" >> /etc/audit/rules.d/cis.rules
+echo "-a always,exit -F arch=b32 -S mount -F auid>=1000 -F auid!=4294967295 -k privileged-mount" >> /etc/audit/rules.d/cis.rules
+echo "-a always,exit -F path=/usr/bin/mount -F arch=b32 -S mount -F auid>=1000 -F auid!=4294967295 -k privileged-mount" >> /etc/audit/rules.d/cis.rules
+
+echo "4.1.20 Ensure the auditing processing failures are handled"
+echo "-f 2" >> /etc/audit/rules.d/cis.rules
+echo "-f 1" >> /etc/audit/rules.d/cis.rules
+
+echo "4.1.21 Ensure auditing of all privileged functions - setuid"
+echo "-a always,exit -F arch=b32 -S execve -C uid!=euid -F euid=0 -k setuid" >> /etc/audit/rules.d/cis.rules
+echo "-a always,exit -F arch=b64 -S execve -C uid!=euid -F euid=0 -k setuid" >> /etc/audit/rules.d/cis.rules
+echo "-a always,exit -F arch=b32 -S execve -C gid!=egid -F egid=0 -k setgid" >> /etc/audit/rules.d/cis.rules
+echo "-a always,exit -F arch=b64 -S execve -C gid!=egid -F egid=0 -k setgid" >> /etc/audit/rules.d/cis.rules
+
+echo "5.3.5 Ensure minimum and maximum requirements are set for password changes"
+cat > /etc/security/pwquality.conf <<EOF
+difok = 8
+minclass = 4
+maxrepeat = 3
+maxclassrepeat = 4
+minlen = 15
+EOF
+
+echo "5.3.10 Ensure certificate status checking for PKI authentication"
+sed -i 's/cert_policy = ca, signature;/cert_policy = ca, ocsp_on, signature;/g' /etc/pam_pkcs11/pam_pkcs11.conf
+
+echo "5.4.1.8 Ensure password expiration is 60 Day maximum for new users"
+sed -i "s/^PASS_MAX_DAYS.*/PASS_MAX_DAYS   60/" /etc/login.defs
+
+echo "5.4.1.10 Ensure delay between logon prompts on failure"
+echo "FAIL_DELAY 4" >> /etc/login.defs
+
+echo "5.9 Ensure number of concurrent sessions is limited"
+echo "* hard maxlogins 10" >> /etc/security/limits.conf
+
+echo "6.3 Ensure removal of software components after update"
+echo "clean_requirements_on_remove=1" >> /etc/yum.conf
+echo "localpkg_gpgcheck=1" >> /etc/yum.conf
+
