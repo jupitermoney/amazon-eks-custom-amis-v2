@@ -909,8 +909,8 @@ cat /etc/shadow | awk -F: '($2 == "" ) { print $1 " does not have a password "}'
 echo "5.3.10 Ensure certificate status checking for PKI authentication"
 sed -i 's/cert_policy = ca, signature;/cert_policy = ca, ocsp_on, signature;/g' /etc/pam_pkcs11/pam_pkcs11.conf
 
-echo "1.5.6 Ensure NIST FIPS-validated cryptography is configured - grub"
-sed -i 's/^\(GRUB_CMDLINE_LINUX_DEFAULT=.*\)"$/\1 fips=1"/' /etc/default/grub
+# echo "1.5.6 Ensure NIST FIPS-validated cryptography is configured - grub"
+# sed -i 's/^\(GRUB_CMDLINE_LINUX_DEFAULT=.*\)"$/\1 fips=1"/' /etc/default/grub
 grub2-mkconfig -o /etc/grub2.cfg
 
 echo "2.2.25 Ensure unrestricted mail relaying is prevented"
