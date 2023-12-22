@@ -321,87 +321,126 @@ sysctl_entry "net.ipv4.conf.default.send_redirects = 0"
 echo "3.2.10 Ensure rate limiting measures are set - sysctl"
 sysctl_entry "net.ipv4.tcp_invalid_ratelimit = 500"
 
+sysctl_entry "net.ipv4.conf.all.accept_source_route=0"
+sysctl_entry "net.ipv4.conf.default.accept_source_route=0"
+sysctl_entry "net.ipv4.route.flush=1"
+sysctl_entry "net.ipv6.conf.all.accept_source_route=0"
+sysctl_entry "net.ipv6.conf.default.accept_source_route=0"
+sysctl_entry "net.ipv6.route.flush=1"
+
+sysctl_entry "net.ipv4.conf.all.accept_redirects=0"
+sysctl_entry "net.ipv4.conf.default.accept_redirects=0"
+sysctl_entry "net.ipv6.conf.all.accept_redirects=0"
+sysctl_entry "net.ipv6.conf.default.accept_redirects=0"
+
+echo "3.3.3 Ensure secure ICMP redirects are not accepted"
+sysctl_entry "net.ipv4.conf.all.secure_redirects=0"
+sysctl_entry "net.ipv4.conf.default.secure_redirects=0"
+
+echo "3.3.9 Ensure IPv6 router advertisements are not accepted"
+sysctl_entry "net.ipv6.conf.all.accept_ra=0"
+sysctl_entry "net.ipv6.conf.default.accept_ra=0"
+
+echo "3.3.4 Ensure suspicious packets are logged"
+sysctl_entry "net.ipv4.conf.all.log_martians=1"
+sysctl_entry "net.ipv4.conf.default.log_martians=1"
+
+echo "3.3.5 Ensure broadcast ICMP requests are ignored"
+sysctl_entry "net.ipv4.icmp_echo_ignore_broadcasts=1"
+
+echo "3.3.6 Ensure bogus ICMP responses are ignored"
+sysctl_entry "net.ipv4.icmp_ignore_bogus_error_responses = 1"
+
+echo "3.3.7 Ensure Reverse Path Filtering is enabled"
+sysctl_entry "net.ipv4.conf.all.rp_filter=1"
+sysctl_entry "net.ipv4.conf.default.rp_filter=1"
+
+
+echo "3.3.8 Ensure TCP SYN Cookies is enabled"
+
+sysctl_entry "net.ipv4.tcp_syncookies = 1"
+
 echo "3.4.1 - ensure DCCP is disabled"
 unload_module dccp
 
 echo "3.4.2 - ensure SCTP is disabled"
 unload_module sctp
 
-# echo "3.5.3.1.1 - ensure iptables packages are installed"
-# yum install -y iptables iptables-services
+echo "3.5.3.1.1 - ensure iptables packages are installed"
+yum install -y iptables iptables-services
 
-# echo "3.5.3.2.1-3.5.3.2.6 ensure iptables  rules configures"
+echo "3.5.3.2.1-3.5.3.2.6 ensure iptables  rules configures"
 
-# #cat >  /etc/sysconfig/iptables <<EOF
-# # Flush iptables rules
-# #-F
+#cat >  /etc/sysconfig/iptables <<EOF
+# Flush iptables rules
+#-F
 
-# # Allow inbound traffic for kubelet (so kubectl logs/exec works)
-# iptables -I INPUT -p tcp -m tcp --dport 10250 -j ACCEPT
+# Allow inbound traffic for kubelet (so kubectl logs/exec works)
+iptables -I INPUT -p tcp -m tcp --dport 10250 -j ACCEPT
 
-# # 3.5.3.2.3 ensure iptables rules exist for all open ports
-# iptables -A INPUT -p tcp -m tcp --dport 22 -m state --state NEW -j ACCEPT
+# 3.5.3.2.3 ensure iptables rules exist for all open ports
+iptables -A INPUT -p tcp -m tcp --dport 22 -m state --state NEW -j ACCEPT
 
-# # 3.5.3.2.2  ensure IPv4 outbound and established connections are configured (Manual)
-# iptables -A OUTPUT -p tcp -m state --state NEW,ESTABLISHED -j ACCEPT
-# iptables -A OUTPUT -p udp -m state --state NEW,ESTABLISHED -j ACCEPT
-# iptables -A OUTPUT -p icmp -m state --state NEW,ESTABLISHED -j ACCEPT
-# iptables -A INPUT -p tcp -m state --state ESTABLISHED -j ACCEPT
-# iptables -A INPUT -p udp -m state --state ESTABLISHED -j ACCEPT
-# iptables -A INPUT -p icmp -m state --state ESTABLISHED -j ACCEPT
+# 3.5.3.2.2  ensure IPv4 outbound and established connections are configured (Manual)
+iptables -A OUTPUT -p tcp -m state --state NEW,ESTABLISHED -j ACCEPT
+iptables -A OUTPUT -p udp -m state --state NEW,ESTABLISHED -j ACCEPT
+iptables -A OUTPUT -p icmp -m state --state NEW,ESTABLISHED -j ACCEPT
+iptables -A INPUT -p tcp -m state --state ESTABLISHED -j ACCEPT
+iptables -A INPUT -p udp -m state --state ESTABLISHED -j ACCEPT
+iptables -A INPUT -p icmp -m state --state ESTABLISHED -j ACCEPT
 
-# # 3.5.3.2.1 ensure IPv4 loopback traffic is configured (Automated)
-# iptables -A INPUT -i lo -j ACCEPT
-# iptables -A OUTPUT -o lo -j ACCEPT
-# iptables -A INPUT -s 127.0.0.0/8 -j DROP
+# 3.5.3.2.1 ensure IPv4 loopback traffic is configured (Automated)
+iptables -A INPUT -i lo -j ACCEPT
+iptables -A OUTPUT -o lo -j ACCEPT
+iptables -A INPUT -s 127.0.0.0/8 -j DROP
 
-# # 3.5.3.2.4 ensure IPv4 default deny firewall policy (Automated)
-# iptables -P INPUT DROP
-# iptables -P OUTPUT DROP
-# iptables -P FORWARD DROP
+# 3.5.3.2.4 ensure IPv4 default deny firewall policy (Automated)
+iptables -P INPUT DROP
+iptables -P OUTPUT DROP
+iptables -P FORWARD DROP
 
 
-# #EOF
+#EOF
 
-# service iptables save
+service iptables save
 
-# echo "3.5.3.2.6 ensure iptables is enabled and running"
-# systemctl --now enable iptables
+echo "3.5.3.2.6 ensure iptables is enabled and running"
+systemctl --now enable iptables
 
-# echo "3.5.3.3.1-3.5.3.3.6 ensure ip6tables  rules configures"
+echo "3.5.3.3.1-3.5.3.3.6 ensure ip6tables  rules configures"
 
-# #cat >  /etc/sysconfig/ip6tables <<EOF
-# # Flush iptables rules
-# #-F
+#cat >  /etc/sysconfig/ip6tables <<EOF
+# Flush iptables rules
+#-F
 
-# # Allow inbound traffic for kubelet (so kubectl logs/exec works)
-# ip6tables -I INPUT -p tcp -m tcp --dport 10250 -j ACCEPT
+# Allow inbound traffic for kubelet (so kubectl logs/exec works)
+ip6tables -I INPUT -p tcp -m tcp --dport 10250 -j ACCEPT
 
-# # 3.5.3.3.3 ensure iptables rules exist for all open ports
-# iptables -A INPUT -p tcp -m tcp --dport 22 -m state --state NEW -j ACCEPT
+# 3.5.3.3.3 ensure iptables rules exist for all open ports
+iptables -A INPUT -p tcp -m tcp --dport 22 -m state --state NEW -j ACCEPT
 
-# # 3.5.3.3.2  ensure IPv6 outbound and established connections are configured (Manual)
-# ip6tables -A OUTPUT -p tcp -m state --state NEW,ESTABLISHED -j ACCEPT
-# ip6tables -A OUTPUT -p udp -m state --state NEW,ESTABLISHED -j ACCEPT
-# ip6tables -A OUTPUT -p icmp -m state --state NEW,ESTABLISHED -j ACCEPT
-# ip6tables -A INPUT -p tcp -m state --state ESTABLISHED -j ACCEPT
-# ip6tables -A INPUT -p udp -m state --state ESTABLISHED -j ACCEPT
-# ip6tables -A INPUT -p icmp -m state --state ESTABLISHED -j ACCEPT
+# 3.5.3.3.2  ensure IPv6 outbound and established connections are configured (Manual)
+ip6tables -A OUTPUT -p tcp -m state --state NEW,ESTABLISHED -j ACCEPT
+ip6tables -A OUTPUT -p udp -m state --state NEW,ESTABLISHED -j ACCEPT
+ip6tables -A OUTPUT -p icmp -m state --state NEW,ESTABLISHED -j ACCEPT
+ip6tables -A INPUT -p tcp -m state --state ESTABLISHED -j ACCEPT
+ip6tables -A INPUT -p udp -m state --state ESTABLISHED -j ACCEPT
+ip6tables -A INPUT -p icmp -m state --state ESTABLISHED -j ACCEPT
 
-# # 3.5.3.3.1 ensure IPv6 loopback traffic is configured (Automated)
-# ip6tables -A INPUT -i lo -j ACCEPT
-# ip6tables -A OUTPUT -o lo -j ACCEPT
-# ip6tables -A INPUT -s ::1 -j DROP
+# 3.5.3.3.1 ensure IPv6 loopback traffic is configured (Automated)
+ip6tables -A INPUT -i lo -j ACCEPT
+ip6tables -A OUTPUT -o lo -j ACCEPT
+ip6tables -A INPUT -s ::1 -j DROP
   
-# # 3.5.3.3.4 ensure IPv6 default deny firewall policy (Automated)
-# ip6tables -P INPUT DROP
-# ip6tables -P OUTPUT DROP
-# ip6tables -P FORWARD DROP
+# 3.5.3.3.4 ensure IPv6 default deny firewall policy (Automated)
+ip6tables -P INPUT DROP
+ip6tables -P OUTPUT DROP
+ip6tables -P FORWARD DROP
 
-# #EOF
-# service ip6tables save
-# echo "3.5.3.3.6 ensure ip6tables is enabled and running"
-# systemctl --now enable ip6tables
+#EOF
+service ip6tables save
+echo "3.5.3.3.6 ensure ip6tables is enabled and running"
+systemctl --now enable ip6tables
 
 echo "4.1.1.1 - ensure audit log storage size is configured"
 yum install -y audit
@@ -545,39 +584,39 @@ echo "Compress=yes" >> /etc/systemd/journald.conf
 echo "4.2.2.3 ensure journald is configured to write logfiles to persistent disk"
 echo "#4.2.2.3 ensure journald is configured to write logfiles to persistent disk"
 echo "Storage=persistent" >> /etc/systemd/journald.conf
-# rsyslog service is setup
-#echo "4.2.2.1 - ensure syslog-ng service is enabled"
-#yum install -y syslog-ng
-#systemctl enable syslog-ng && systemctl start syslog-ng
+rsyslog service is setup
+echo "4.2.2.1 - ensure syslog-ng service is enabled"
+yum install -y syslog-ng
+systemctl enable syslog-ng && systemctl start syslog-ng
 
-#echo "4.2.2.2 - ensure logging is configured"
-#echo "log { source(src); source(chroots); filter(f_console); destination(console); };" >> /etc/syslog-ng/conf.d/cis.conf
-#echo "log { source(src); source(chroots); filter(f_console); destination(xconsole); };" >> /etc/syslog-ng/conf.d/cis.conf
-#echo "log { source(src); source(chroots); filter(f_newscrit); destination(newscrit); };" >> /etc/syslog-ng/conf.d/cis.conf
-#echo "log { source(src); source(chroots); filter(f_newserr); destination(newserr); };" >> /etc/syslog-ng/conf.d/cis.conf
-#echo "log { source(src); source(chroots); filter(f_newsnotice); destination(newsnotice); };" >> /etc/syslog-ng/conf.d/cis.conf
-#echo "log { source(src); source(chroots); filter(f_mailinfo); destination(mailinfo); };" >> /etc/syslog-ng/conf.d/cis.conf
-#echo "log { source(src); source(chroots); filter(f_mailwarn); destination(mailwarn); };" >> /etc/syslog-ng/conf.d/cis.conf
-#echo "log { source(src); source(chroots); filter(f_mailerr);  destination(mailerr); };" >> /etc/syslog-ng/conf.d/cis.conf
-#echo "log { source(src); source(chroots); filter(f_mail); destination(mail); };" >> /etc/syslog-ng/conf.d/cis.conf
-#echo "log { source(src); source(chroots); filter(f_acpid); destination(acpid); flags(final); };" >> /etc/syslog-ng/conf.d/cis.conf
-#echo "log { source(src); source(chroots); filter(f_acpid_full); destination(devnull); flags(final); };" >> /etc/syslog-ng/conf.d/cis.conf
-#echo "log { source(src); source(chroots); filter(f_acpid_old); destination(acpid); flags(final); };" >> /etc/syslog-ng/conf.d/cis.conf
-#echo "log { source(src); source(chroots); filter(f_netmgm); destination(netmgm); flags(final); };" >> /etc/syslog-ng/conf.d/cis.conf
-#echo "log { source(src); source(chroots); filter(f_local); destination(localmessages); };" >> /etc/syslog-ng/conf.d/cis.conf
-#echo "log { source(src); source(chroots); filter(f_messages); destination(messages); };" >> /etc/syslog-ng/conf.d/cis.conf
-#echo "log { source(src); source(chroots); filter(f_iptables); destination(firewall); };" >> /etc/syslog-ng/conf.d/cis.conf
-#echo "log { source(src); source(chroots); filter(f_warn); destination(warn); };" >> /etc/syslog-ng/conf.d/cis.conf
-#pkill -HUP syslog-ng
+echo "4.2.2.2 - ensure logging is configured"
+echo "log { source(src); source(chroots); filter(f_console); destination(console); };" >> /etc/syslog-ng/conf.d/cis.conf
+echo "log { source(src); source(chroots); filter(f_console); destination(xconsole); };" >> /etc/syslog-ng/conf.d/cis.conf
+echo "log { source(src); source(chroots); filter(f_newscrit); destination(newscrit); };" >> /etc/syslog-ng/conf.d/cis.conf
+echo "log { source(src); source(chroots); filter(f_newserr); destination(newserr); };" >> /etc/syslog-ng/conf.d/cis.conf
+echo "log { source(src); source(chroots); filter(f_newsnotice); destination(newsnotice); };" >> /etc/syslog-ng/conf.d/cis.conf
+echo "log { source(src); source(chroots); filter(f_mailinfo); destination(mailinfo); };" >> /etc/syslog-ng/conf.d/cis.conf
+echo "log { source(src); source(chroots); filter(f_mailwarn); destination(mailwarn); };" >> /etc/syslog-ng/conf.d/cis.conf
+echo "log { source(src); source(chroots); filter(f_mailerr);  destination(mailerr); };" >> /etc/syslog-ng/conf.d/cis.conf
+echo "log { source(src); source(chroots); filter(f_mail); destination(mail); };" >> /etc/syslog-ng/conf.d/cis.conf
+echo "log { source(src); source(chroots); filter(f_acpid); destination(acpid); flags(final); };" >> /etc/syslog-ng/conf.d/cis.conf
+echo "log { source(src); source(chroots); filter(f_acpid_full); destination(devnull); flags(final); };" >> /etc/syslog-ng/conf.d/cis.conf
+echo "log { source(src); source(chroots); filter(f_acpid_old); destination(acpid); flags(final); };" >> /etc/syslog-ng/conf.d/cis.conf
+echo "log { source(src); source(chroots); filter(f_netmgm); destination(netmgm); flags(final); };" >> /etc/syslog-ng/conf.d/cis.conf
+echo "log { source(src); source(chroots); filter(f_local); destination(localmessages); };" >> /etc/syslog-ng/conf.d/cis.conf
+echo "log { source(src); source(chroots); filter(f_messages); destination(messages); };" >> /etc/syslog-ng/conf.d/cis.conf
+echo "log { source(src); source(chroots); filter(f_iptables); destination(firewall); };" >> /etc/syslog-ng/conf.d/cis.conf
+echo "log { source(src); source(chroots); filter(f_warn); destination(warn); };" >> /etc/syslog-ng/conf.d/cis.conf
+pkill -HUP syslog-ng
 
-#echo "4.2.2.3 - ensure syslog-ng default file permissions configured"
-#echo "options { chain_hostnames(off); flush_lines(0); perm(0640); stats_freq(3600); threaded(yes); };" >> /etc/syslog-ng/conf.d/cis.conf
+echo "4.2.2.3 - ensure syslog-ng default file permissions configured"
+echo "options { chain_hostnames(off); flush_lines(0); perm(0640); stats_freq(3600); threaded(yes); };" >> /etc/syslog-ng/conf.d/cis.conf
 
-#echo "4.2.2.4 - ensure syslog-ng is configured to send logs to a remote log host"
-#echo "[not scored] - customer responsible for this configuration"
+echo "4.2.2.4 - ensure syslog-ng is configured to send logs to a remote log host"
+echo "[not scored] - customer responsible for this configuration"
 
-#echo "4.2.2.5 - ensure remote syslog-ng messages are only accepted on designated log hosts"
-#echo "[not scored] - customer responsible for this configuration"
+echo "4.2.2.5 - ensure remote syslog-ng messages are only accepted on designated log hosts"
+echo "[not scored] - customer responsible for this configuration"
 
 echo "4.2.3 - ensure rsyslog or syslog-ng is installed"
 echo "[not scored] - handled by previous steps"
