@@ -342,9 +342,50 @@ sysctl_entry "net.ipv6.conf.all.forwarding = 1"
 sysctl_entry "net.ipv6.conf.all.disable_ipv6 = 1"
 sysctl_entry "net.ipv6.conf.default.disable_ipv6 = 1"
 
+
+sysctl_entry "net.ipv4.conf.all.accept_source_route=0"
+sysctl_entry "net.ipv4.conf.default.accept_source_route=0"
+sysctl_entry "net.ipv4.route.flush=1"
+sysctl_entry "net.ipv6.conf.all.accept_source_route=0"
+sysctl_entry "net.ipv6.conf.default.accept_source_route=0"
+sysctl_entry "net.ipv6.route.flush=1"
+
+sysctl_entry "net.ipv4.conf.all.accept_redirects=0"
+sysctl_entry "net.ipv4.conf.default.accept_redirects=0"
+sysctl_entry "net.ipv6.conf.all.accept_redirects=0"
+sysctl_entry "net.ipv6.conf.default.accept_redirects=0"
+
+echo "3.3.3 Ensure secure ICMP redirects are not accepted"
+sysctl_entry "net.ipv4.conf.all.secure_redirects=0"
+sysctl_entry "net.ipv4.conf.default.secure_redirects=0"
+
+
+echo "3.3.4 Ensure suspicious packets are logged"
+sysctl_entry "net.ipv4.conf.all.log_martians=1"
+sysctl_entry "net.ipv4.conf.default.log_martians=1"
+
+echo "3.3.5 Ensure broadcast ICMP requests are ignored"
+sysctl_entry "net.ipv4.icmp_echo_ignore_broadcasts=1"
+
+echo "3.3.6 Ensure bogus ICMP responses are ignored"
+sysctl_entry "net.ipv4.icmp_ignore_bogus_error_responses = 1"
+
+echo "3.3.7 Ensure Reverse Path Filtering is enabled"
+sysctl_entry "net.ipv4.conf.all.rp_filter=1"
+sysctl_entry "net.ipv4.conf.default.rp_filter=1"
+
+
+echo "3.3.8 Ensure TCP SYN Cookies is enabled"
+
+sysctl_entry "net.ipv4.tcp_syncookies = 1"
+
 echo "3.1.2 - ensure packet redirect sending is disabled"
 sysctl_entry "net.ipv4.conf.all.send_redirects = 0"
 sysctl_entry "net.ipv4.conf.default.send_redirects = 0"
+
+echo "3.3.9 Ensure IPv6 router advertisements are not accepted"
+sysctl_entry "net.ipv6.conf.all.accept_ra=0"
+sysctl_entry "net.ipv6.conf.default.accept_ra=0"
 
 echo "3.2.10 Ensure rate limiting measures are set - sysctl"
 sysctl_entry "net.ipv4.tcp_invalid_ratelimit = 500"
@@ -860,3 +901,80 @@ echo "FAIL_DELAY 4" >> /etc/login.defs
 
 echo "5.3.10 Ensure certificate status checking for PKI authentication"
 sed -i 's/cert_policy = ca, signature;/cert_policy = ca, ocsp_on, signature;/g' /etc/pam_pkcs11/pam_pkcs11.conf
+
+echo "3.5.3.1.1 - ensure iptables packages are installed"
+yum install -y iptables iptables-services
+
+echo "3.5.3.2.1-3.5.3.2.6 ensure iptables  rules configures"
+
+#cat >  /etc/sysconfig/iptables <<EOF
+# Flush iptables rules
+#-F
+
+# Allow inbound traffic for kubelet (so kubectl logs/exec works)
+iptables -I INPUT -p tcp -m tcp --dport 10250 -j ACCEPT
+
+# 3.5.3.2.3 ensure iptables rules exist for all open ports
+iptables -A INPUT -p tcp -m tcp --dport 22 -m state --state NEW -j ACCEPT
+
+# 3.5.3.2.2  ensure IPv4 outbound and established connections are configured (Manual)
+iptables -A OUTPUT -p tcp -m state --state NEW,ESTABLISHED -j ACCEPT
+iptables -A OUTPUT -p udp -m state --state NEW,ESTABLISHED -j ACCEPT
+iptables -A OUTPUT -p icmp -m state --state NEW,ESTABLISHED -j ACCEPT
+iptables -A INPUT -p tcp -m state --state ESTABLISHED -j ACCEPT
+iptables -A INPUT -p udp -m state --state ESTABLISHED -j ACCEPT
+iptables -A INPUT -p icmp -m state --state ESTABLISHED -j ACCEPT
+
+# 3.5.3.2.1 ensure IPv4 loopback traffic is configured (Automated)
+iptables -A INPUT -i lo -j ACCEPT
+iptables -A OUTPUT -o lo -j ACCEPT
+iptables -A INPUT -s 127.0.0.0/8 -j DROP
+
+# 3.5.3.2.4 ensure IPv4 default deny firewall policy (Automated)
+iptables -P INPUT DROP
+iptables -P OUTPUT DROP
+iptables -P FORWARD DROP
+
+
+#EOF
+
+service iptables save
+
+echo "3.5.3.2.6 ensure iptables is enabled and running"
+systemctl --now enable iptables
+
+echo "3.5.3.3.1-3.5.3.3.6 ensure ip6tables  rules configures"
+
+#cat >  /etc/sysconfig/ip6tables <<EOF
+# Flush iptables rules
+#-F
+
+# Allow inbound traffic for kubelet (so kubectl logs/exec works)
+ip6tables -I INPUT -p tcp -m tcp --dport 10250 -j ACCEPT
+
+# 3.5.3.3.3 ensure iptables rules exist for all open ports
+iptables -A INPUT -p tcp -m tcp --dport 22 -m state --state NEW -j ACCEPT
+
+# 3.5.3.3.2  ensure IPv6 outbound and established connections are configured (Manual)
+ip6tables -A OUTPUT -p tcp -m state --state NEW,ESTABLISHED -j ACCEPT
+ip6tables -A OUTPUT -p udp -m state --state NEW,ESTABLISHED -j ACCEPT
+ip6tables -A OUTPUT -p icmp -m state --state NEW,ESTABLISHED -j ACCEPT
+ip6tables -A INPUT -p tcp -m state --state ESTABLISHED -j ACCEPT
+ip6tables -A INPUT -p udp -m state --state ESTABLISHED -j ACCEPT
+ip6tables -A INPUT -p icmp -m state --state ESTABLISHED -j ACCEPT
+
+# 3.5.3.3.1 ensure IPv6 loopback traffic is configured (Automated)
+ip6tables -A INPUT -i lo -j ACCEPT
+ip6tables -A OUTPUT -o lo -j ACCEPT
+ip6tables -A INPUT -s ::1 -j DROP
+  
+# 3.5.3.3.4 ensure IPv6 default deny firewall policy (Automated)
+ip6tables -P INPUT DROP
+ip6tables -P OUTPUT DROP
+ip6tables -P FORWARD DROP
+
+#EOF
+service ip6tables save
+echo "3.5.3.3.6 ensure ip6tables is enabled and running"
+systemctl --now enable ip6tables
+
