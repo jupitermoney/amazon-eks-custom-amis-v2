@@ -581,8 +581,8 @@ echo "ForwardToSyslog=yes" >> /etc/systemd/journald.conf
 echo "4.2.2.2 ensure journald is configured to compress large log files"
 echo "#4.2.2.2 ensure journald is configured to compress large log files" >> /etc/systemd/journald.conf 
 echo "Compress=yes" >> /etc/systemd/journald.conf 
-echo "4.2.2.3 ensure journald is configured to write logfiles to persistent disk"
-echo "#4.2.2.3 ensure journald is configured to write logfiles to persistent disk"
+#echo "4.2.2.3 ensure journald is configured to write logfiles to persistent disk"
+#echo "#4.2.2.3 ensure journald is configured to write logfiles to persistent disk"
 echo "Storage=persistent" >> /etc/systemd/journald.conf
 rsyslog service is setup
 echo "4.2.2.1 - ensure syslog-ng service is enabled"
