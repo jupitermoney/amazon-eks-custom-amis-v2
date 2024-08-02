@@ -180,7 +180,6 @@ yum_remove mcstrans
 
 echo "1.7.1 - ensure message of the day is configured properly"
 rm -f /etc/cron.d/update-motd
-
 cat > /etc/update-motd.d/30-banner <<"OUTEREOF"
 #!/bin/sh
 cat <<"EOF"
@@ -321,17 +320,18 @@ sysctl_entry "net.ipv4.conf.default.send_redirects = 0"
 echo "3.2.10 Ensure rate limiting measures are set - sysctl"
 sysctl_entry "net.ipv4.tcp_invalid_ratelimit = 500"
 
-sysctl_entry "net.ipv4.conf.all.accept_source_route=0"
-sysctl_entry "net.ipv4.conf.default.accept_source_route=0"
+sysctl_entry "net.ipv4.conf.all.accept_source_route = 0"
+sysctl_entry "net.ipv4.conf.default.accept_source_route = 0"
 sysctl_entry "net.ipv4.route.flush=1"
 sysctl_entry "net.ipv6.conf.all.accept_source_route=0"
 sysctl_entry "net.ipv6.conf.default.accept_source_route=0"
 sysctl_entry "net.ipv6.route.flush=1"
 
-sysctl_entry "net.ipv4.conf.all.accept_redirects=0"
-sysctl_entry "net.ipv4.conf.default.accept_redirects=0"
-sysctl_entry "net.ipv6.conf.all.accept_redirects=0"
-sysctl_entry "net.ipv6.conf.default.accept_redirects=0"
+echo "3.2.11	ensure ICMP redirects are not accepted"
+sysctl_entry "net.ipv4.conf.all.accept_redirects = 0"
+sysctl_entry "net.ipv4.conf.default.accept_redirects = 0"
+sysctl_entry "net.ipv6.conf.all.accept_redirects = 0"
+sysctl_entry "net.ipv6.conf.default.accept_redirects = 0"
 
 echo "3.3.3 Ensure secure ICMP redirects are not accepted"
 sysctl_entry "net.ipv4.conf.all.secure_redirects=0"
@@ -345,10 +345,10 @@ echo "3.3.4 Ensure suspicious packets are logged"
 sysctl_entry "net.ipv4.conf.all.log_martians=1"
 sysctl_entry "net.ipv4.conf.default.log_martians=1"
 
-echo "3.3.5 Ensure broadcast ICMP requests are ignored"
-sysctl_entry "net.ipv4.icmp_echo_ignore_broadcasts=1"
+echo "3.3.5	ensure broadcast ICMP requests are ignored"
+sysctl_entry "net.ipv4.icmp_echo_ignore_broadcasts = 1"
 
-echo "3.3.6 Ensure bogus ICMP responses are ignored"
+echo "3.3.6	ensure bogus ICMP responses are ignored"
 sysctl_entry "net.ipv4.icmp_ignore_bogus_error_responses = 1"
 
 echo "3.3.7 Ensure Reverse Path Filtering is enabled"
@@ -359,6 +359,10 @@ sysctl_entry "net.ipv4.conf.default.rp_filter=1"
 echo "3.3.8 Ensure TCP SYN Cookies is enabled"
 
 sysctl_entry "net.ipv4.tcp_syncookies = 1"
+
+echo "3.3.9	ensure IPv6 router advertisements are not accepted"
+sysctl_entry "net.ipv6.conf.all.accept_ra = 0"
+sysctl_entry "net.ipv6.conf.default.accept_ra = 0"
 
 echo "3.4.1 - ensure DCCP is disabled"
 unload_module dccp
@@ -1036,4 +1040,3 @@ echo "* hard maxlogins 10" >> /etc/security/limits.conf
 echo "6.3 Ensure removal of software components after update"
 echo "clean_requirements_on_remove=1" >> /etc/yum.conf
 echo "localpkg_gpgcheck=1" >> /etc/yum.conf
-
