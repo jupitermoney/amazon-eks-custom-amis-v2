@@ -582,7 +582,7 @@ echo "4.2.2.2 ensure journald is configured to compress large log files"
 echo "#4.2.2.2.5 ensure journald is configured to compress large log files" >> /etc/systemd/journald.conf 
 echo "Compress=yes" >> /etc/systemd/journald.conf 
 echo "4.2.2.3 ensure journald is configured to write logfiles to persistent disk"
-echo "#4.2.2.3 ensure journald is configured to write logfiles to persistent disk"
+echo "4.2.2.3.5 ensure journald is configured to write logfiles to persistent disk"
 echo "Storage=persistent" >> /etc/systemd/journald.conf
 rsyslog service is setup
 echo "4.2.2.1.2 - ensure syslog-ng service is enabled"
@@ -609,7 +609,7 @@ echo "log { source(src); source(chroots); filter(f_iptables); destination(firewa
 echo "log { source(src); source(chroots); filter(f_warn); destination(warn); };" >> /etc/syslog-ng/conf.d/cis.conf
 pkill -HUP syslog-ng
 
-echo "4.2.2.3 - ensure syslog-ng default file permissions configured"
+echo "4.2.2.3.2 - ensure syslog-ng default file permissions configured"
 echo "options { chain_hostnames(off); flush_lines(0); perm(0640); stats_freq(3600); threaded(yes); };" >> /etc/syslog-ng/conf.d/cis.conf
 
 echo "4.2.2.4 - ensure syslog-ng is configured to send logs to a remote log host"
