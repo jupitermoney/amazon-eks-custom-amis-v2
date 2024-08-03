@@ -549,47 +549,47 @@ echo "4.2.1.1 - ensure rsyslog Service is enabled"
 yum install -y rsyslog
 systemctl enable rsyslog
 
-#echo "4.2.1.2 - ensure logging is configured"
-#echo "*.emerg                                  :omusrmsg:*" >> /etc/rsyslog.d/cis.conf
-#echo "mail.*                                  -/var/log/mail" >> /etc/rsyslog.d/cis.conf
-#echo "mail.info                               -/var/log/mail.info" >> /etc/rsyslog.d/cis.conf
-#echo "mail.warning                            -/var/log/mail.warn" >> /etc/rsyslog.d/cis.conf
-#echo "mail.err                                 /var/log/mail.err" >> /etc/rsyslog.d/cis.conf
-#echo "news.crit                               -/var/log/news/news.crit" >> /etc/rsyslog.d/cis.conf
-#echo "news.err                                -/var/log/news/news.err" >> /etc/rsyslog.d/cis.conf
-#echo "news.notice                             -/var/log/news/news.notice" >> /etc/rsyslog.d/cis.conf
-#echo "*.=warning;*.=err                       -/var/log/warn" >> /etc/rsyslog.d/cis.conf
-#echo "*.crit                                   /var/log/warn" >> /etc/rsyslog.d/cis.conf
-#echo "*.*;mail.none;news.none                 -/var/log/messages" >> /etc/rsyslog.d/cis.conf
-#echo "local0,local1.*                         -/var/log/localmessages" >> /etc/rsyslog.d/cis.conf
-#echo "local2,local3.*                         -/var/log/localmessages" >> /etc/rsyslog.d/cis.conf
-#echo "local4,local5.*                         -/var/log/localmessages" >> /etc/rsyslog.d/cis.conf
-#echo "local6,local7.*                         -/var/log/localmessages" >> /etc/rsyslog.d/cis.conf
+echo "4.2.1.2 - ensure logging is configured"
+echo "*.emerg                                  :omusrmsg:*" >> /etc/rsyslog.d/cis.conf
+echo "mail.*                                  -/var/log/mail" >> /etc/rsyslog.d/cis.conf
+echo "mail.info                               -/var/log/mail.info" >> /etc/rsyslog.d/cis.conf
+echo "mail.warning                            -/var/log/mail.warn" >> /etc/rsyslog.d/cis.conf
+echo "mail.err                                 /var/log/mail.err" >> /etc/rsyslog.d/cis.conf
+echo "news.crit                               -/var/log/news/news.crit" >> /etc/rsyslog.d/cis.conf
+echo "news.err                                -/var/log/news/news.err" >> /etc/rsyslog.d/cis.conf
+echo "news.notice                             -/var/log/news/news.notice" >> /etc/rsyslog.d/cis.conf
+echo "*.=warning;*.=err                       -/var/log/warn" >> /etc/rsyslog.d/cis.conf
+echo "*.crit                                   /var/log/warn" >> /etc/rsyslog.d/cis.conf
+echo "*.*;mail.none;news.none                 -/var/log/messages" >> /etc/rsyslog.d/cis.conf
+echo "local0,local1.*                         -/var/log/localmessages" >> /etc/rsyslog.d/cis.conf
+echo "local2,local3.*                         -/var/log/localmessages" >> /etc/rsyslog.d/cis.conf
+echo "local4,local5.*                         -/var/log/localmessages" >> /etc/rsyslog.d/cis.conf
+echo "local6,local7.*                         -/var/log/localmessages" >> /etc/rsyslog.d/cis.conf
 
-#echo "4.2.1.3 - ensure rsyslog default file permissions configured"
-#echo "\$FileCreateMode 0640" >> /etc/rsyslog.d/cis.conf
+echo "4.2.1.3 - ensure rsyslog default file permissions configured"
+echo "\$FileCreateMode 0640" >> /etc/rsyslog.d/cis.conf
 
-#echo "4.2.1.4 - ensure rsyslog is configured to send logs to a remote log host"
-#echo "[not scored] - customer responsible for this configuration"
+echo "4.2.1.4 - ensure rsyslog is configured to send logs to a remote log host"
+echo "[not scored] - customer responsible for this configuration"
 
-#echo "4.2.1.5 - ensure remote rsyslog messages are only accepted on designated log hosts."
-#echo "[not scored] - customer responsible for this configuration"
+echo "4.2.1.5 - ensure remote rsyslog messages are only accepted on designated log hosts."
+echo "[not scored] - customer responsible for this configuration"
 
-#echo "4.2.2.1 ensure journald is configured to send logs to rsyslog"
-#echo "#4.2.2.1 ensure journald is configured to send logs to rsyslog" >> /etc/systemd/journald.conf
-#echo "ForwardToSyslog=yes" >> /etc/systemd/journald.conf 
-#echo "4.2.2.2 ensure journald is configured to compress large log files"
-#echo "#4.2.2.2 ensure journald is configured to compress large log files" >> /etc/systemd/journald.conf 
-#echo "Compress=yes" >> /etc/systemd/journald.conf 
-#echo "4.2.2.3 ensure journald is configured to write logfiles to persistent disk"
-#echo "#4.2.2.3 ensure journald is configured to write logfiles to persistent disk"
-#echo "Storage=persistent" >> /etc/systemd/journald.conf
-#rsyslog service is setup
-echo "4.2.2.1 - ensure syslog-ng service is enabled"
+echo "4.2.2.1 ensure journald is configured to send logs to rsyslog"
+echo "#4.2.2.1.3 ensure journald is configured to send logs to rsyslog" >> /etc/systemd/journald.conf
+echo "ForwardToSyslog=yes" >> /etc/systemd/journald.conf 
+echo "4.2.2.2 ensure journald is configured to compress large log files"
+echo "#4.2.2.2.5 ensure journald is configured to compress large log files" >> /etc/systemd/journald.conf 
+echo "Compress=yes" >> /etc/systemd/journald.conf 
+echo "4.2.2.3 ensure journald is configured to write logfiles to persistent disk"
+echo "#4.2.2.3 ensure journald is configured to write logfiles to persistent disk"
+echo "Storage=persistent" >> /etc/systemd/journald.conf
+rsyslog service is setup
+echo "4.2.2.1.2 - ensure syslog-ng service is enabled"
 yum install -y syslog-ng
 systemctl enable syslog-ng && systemctl start syslog-ng
 
-echo "4.2.2.2 - ensure logging is configured"
+echo "4.2.2.2.4 - ensure logging is configured"
 echo "log { source(src); source(chroots); filter(f_console); destination(console); };" >> /etc/syslog-ng/conf.d/cis.conf
 echo "log { source(src); source(chroots); filter(f_console); destination(xconsole); };" >> /etc/syslog-ng/conf.d/cis.conf
 echo "log { source(src); source(chroots); filter(f_newscrit); destination(newscrit); };" >> /etc/syslog-ng/conf.d/cis.conf
