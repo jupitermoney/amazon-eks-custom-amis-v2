@@ -575,16 +575,16 @@ echo "[not scored] - customer responsible for this configuration"
 echo "4.2.1.5 - ensure remote rsyslog messages are only accepted on designated log hosts."
 echo "[not scored] - customer responsible for this configuration"
 
-echo "4.2.2.1 ensure journald is configured to send logs to rsyslog"
-echo "#4.2.2.1.3 ensure journald is configured to send logs to rsyslog" >> /etc/systemd/journald.conf
-echo "ForwardToSyslog=yes" >> /etc/systemd/journald.conf 
-echo "4.2.2.2 ensure journald is configured to compress large log files"
-echo "#4.2.2.2.5 ensure journald is configured to compress large log files" >> /etc/systemd/journald.conf 
-echo "Compress=yes" >> /etc/systemd/journald.conf 
-echo "4.2.2.3 ensure journald is configured to write logfiles to persistent disk"
-echo "4.2.2.3.5 ensure journald is configured to write logfiles to persistent disk"
+#echo "4.2.2.1 ensure journald is configured to send logs to rsyslog"
+#echo "#4.2.2.1.3 ensure journald is configured to send logs to rsyslog" >> /etc/systemd/journald.conf
+#echo "ForwardToSyslog=yes" >> /etc/systemd/journald.conf 
+#echo "4.2.2.2 ensure journald is configured to compress large log files"
+#echo "#4.2.2.2.5 ensure journald is configured to compress large log files" >> /etc/systemd/journald.conf 
+#echo "Compress=yes" >> /etc/systemd/journald.conf 
+#echo "4.2.2.3 ensure journald is configured to write logfiles to persistent disk"
+#echo "4.2.2.3.5 ensure journald is configured to write logfiles to persistent disk"
 echo "Storage=persistent" >> /etc/systemd/journald.conf
-rsyslog service is setup
+#rsyslog service is setup
 echo "4.2.2.1.2 - ensure syslog-ng service is enabled"
 yum install -y syslog-ng
 systemctl enable syslog-ng && systemctl start syslog-ng
