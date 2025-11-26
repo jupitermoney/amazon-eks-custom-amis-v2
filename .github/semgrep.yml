@@ -1,0 +1,25 @@
+# This workflow is placed in each individual repository.
+# It triggers the reusable workflow from the central repository.
+
+name: PR Semgrep Scan
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+  schedule:
+    - cron: '30 3 * * 0'  # Sunday 9 AM IST weekly
+  workflow_dispatch:     # Optional: allow manual trigger
+
+jobs:
+  semgrep-scan:
+    uses: jupitermoney/security-automations/.github/workflows/semgrep-reusable-workflow.yml@develop
+    with:
+      repo-name: ${{ github.repository }}
+    secrets:
+      SEMGREP_API_URL: ${{ secrets.SEMGREP_API_URL }}
+      SEMGREP_SLACK_BOT_TOKEN: ${{ secrets.SEMGREP_SLACK_BOT_TOKEN }}
+      SEMGREP_SLACK_SIGNING_SECRET: ${{ secrets.SEMGREP_SLACK_SIGNING_SECRET }}
+      SEMGREP_GITHUB_TOKEN: ${{ secrets.SEMGREP_GITHUB_TOKEN }}
+      SEMGREP_API_KEY: ${{ secrets.SEMGREP_API_KEY }} # Correctly passing the API key
